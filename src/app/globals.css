@@ -1,26 +1,184 @@
 @import "tailwindcss";
 
+@theme {
+  --color-outline-variant: #c6c5d1;
+  --color-inverse-primary: #b7c4ff;
+  --color-surface: #fbf8fe;
+  --color-on-primary-fixed-variant: #35437c;
+  --color-primary-fixed-dim: #b7c4ff;
+  --color-background: #fbf8fe;
+  --color-tertiary-container: #3e0e00;
+  --color-on-error: #ffffff;
+  --color-tertiary-fixed: #ffdbcf;
+  --color-surface-tint: #4d5b96;
+  --color-primary-container: #071952;
+  --color-secondary-fixed-dim: #76d4e7;
+  --color-on-background: #1b1b1f;
+  --color-on-primary-container: #7583c1;
+  --color-on-secondary: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-on-primary: #ffffff;
+  --color-surface-container-highest: #e4e1e7;
+  --color-surface-variant: #e4e1e7;
+  --color-primary-fixed: #dde1ff;
+  --color-surface-bright: #fbf8fe;
+  --color-inverse-surface: #303034;
+  --color-surface-dim: #dbd9df;
+  --color-on-surface: #1b1b1f;
+  --color-error: #ba1a1a;
+  --color-on-secondary-container: #006b7a;
+  --color-surface-container: #efedf2;
+  --color-on-tertiary: #ffffff;
+  --color-secondary-container: #8debff;
+  --color-on-tertiary-fixed: #390c00;
+  --color-inverse-on-surface: #f2f0f5;
+  --color-on-surface-variant: #454650;
+  --color-on-error-container: #93000a;
+  --color-on-secondary-fixed-variant: #004e5a;
+  --color-primary: #00041f;
+  --color-secondary: #006877;
+  --color-on-secondary-fixed: #001f25;
+  --color-on-secondary-container: #006b7a;
+  --color-on-secondary-fixed-variant: #004e5a;
+  --color-on-primary-fixed: #03154f;
+  --color-on-tertiary-fixed: #390c00;
+  --color-on-tertiary-fixed-variant: #72351f;
+  --color-tertiary-fixed-dim: #ffb59c;
+  --color-on-tertiary-container: #bf7258;
+  --color-surface-container-low: #f5f3f8;
+  --color-surface-container-high: #e9e7ed;
+  --color-surface-container-lowest: #ffffff;
+  --color-inverse-on-surface: #f2f0f5;
+  --color-outline: #767681;
+  --color-tertiary: #120200;
+
+  --font-h1: "Inter", sans-serif;
+  --font-h2: "Inter", sans-serif;
+  --font-h3: "Inter", sans-serif;
+  --font-body-lg: "Inter", sans-serif;
+  --font-body-md: "Inter", sans-serif;
+  --font-label-caps: "Inter", sans-serif;
+  --font-stat-display: "Inter", sans-serif;
+
+  --text-h1: 34px;
+  --text-h1--line-height: 40px;
+  --text-h1--letter-spacing: -0.02em;
+  --text-h1--font-weight: 800;
+
+  --text-h2: 24px;
+  --text-h2--line-height: 30px;
+  --text-h2--letter-spacing: -0.01em;
+  --text-h2--font-weight: 700;
+
+  --text-h3: 20px;
+  --text-h3--line-height: 26px;
+  --text-h3--letter-spacing: 0em;
+  --text-h3--font-weight: 700;
+
+  --text-body-lg: 17px;
+  --text-body-lg--line-height: 24px;
+  --text-body-lg--letter-spacing: 0em;
+  --text-body-lg--font-weight: 400;
+
+  --text-body-md: 15px;
+  --text-body-md--line-height: 22px;
+  --text-body-md--letter-spacing: 0em;
+  --text-body-md--font-weight: 400;
+
+  --text-label-caps: 12px;
+  --text-label-caps--line-height: 16px;
+  --text-label-caps--letter-spacing: 0.05em;
+  --text-label-caps--font-weight: 700;
+
+  --text-stat-display: 48px;
+  --text-stat-display--line-height: 48px;
+  --text-stat-display--letter-spacing: -0.03em;
+  --text-stat-display--font-weight: 800;
+
+  --font-inter: "Inter", sans-serif;
+  
+  --spacing-md: 16px;
+  --spacing-sm: 8px;
+  --spacing-lg: 24px;
+  --spacing-unit: 4px;
+  --spacing-container-padding: 20px;
+  --spacing-xl: 32px;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --background: #fbf8fe;
+  --foreground: #1b1b1f;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter);
+  overflow: hidden; /* Prevent body scroll, let components handle it */
+}
+
+@layer utilities {
+  .glass-card {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255, 255, 255, 0.4);
+    border-left: 1px solid rgba(255, 255, 255, 0.4);
+    border-right: 1px solid rgba(7, 25, 82, 0.05);
+    border-bottom: 1px solid rgba(7, 25, 82, 0.05);
+  }
+  .glass-input {
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(10px);
+  }
+  .bot-bubble {
+    background: rgba(0, 104, 119, 0.04);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(0, 104, 119, 0.08);
+  }
+  .user-bubble {
+    background: rgba(0, 4, 31, 0.03);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(0, 4, 31, 0.05);
+  }
+  .bg-mesh {
+    background-color: #fbf8fe;
+    background-image: 
+        radial-gradient(at 0% 0%, rgba(8, 131, 149, 0.15) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(7, 25, 82, 0.1) 0px, transparent 50%);
+  }
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
+  
+  .glass-panel {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+  .micro-border {
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    border-left: 1px solid rgba(255, 255, 255, 0.2);
+    border-bottom: 1px solid rgba(0, 104, 119, 0.05);
+    border-right: 1px solid rgba(0, 104, 119, 0.05);
+  }
+  .stat-card-border {
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-bottom: 2px solid rgba(7, 25, 82, 0.1);
+  }
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 5px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(0, 4, 31, 0.05);
+    border-radius: 10px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 4, 31, 0.1);
+  }
 }
