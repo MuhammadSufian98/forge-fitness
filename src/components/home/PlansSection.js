@@ -1,6 +1,7 @@
 "use client";
-import React, { useState } from "react";
+import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import usePlansStore from "@/stores/home/usePlansStore";
 import {
   Check,
   X,
@@ -12,7 +13,9 @@ import {
 } from "lucide-react";
 
 export default function PlansSection() {
-  const [selectedPlan, setSelectedPlan] = useState(null);
+  const selectedPlan = usePlansStore((state) => state.selectedPlan);
+  const openPlan = usePlansStore((state) => state.openPlan);
+  const closePlan = usePlansStore((state) => state.closePlan);
 
   const plans = [
     {
@@ -89,7 +92,7 @@ export default function PlansSection() {
               <motion.div
                 key={plan.id}
                 layoutId={`card-${plan.id}`}
-                onClick={() => setSelectedPlan(plan)}
+                onClick={() => openPlan(plan)}
                 whileHover={{ y: -10, transition: { duration: 0.2 } }}
                 className="bg-white rounded-[2.5rem] p-8 border border-[#071952]/5 shadow-sm cursor-pointer relative overflow-hidden group flex flex-col"
               >
@@ -189,7 +192,7 @@ export default function PlansSection() {
               {/* Right Side: Features & Details */}
               <div className="p-12 flex-1 overflow-y-auto bg-white custom-scrollbar relative">
                 <button
-                  onClick={() => setSelectedPlan(null)}
+                  onClick={closePlan}
                   className="absolute top-8 right-8 text-[#071952]/20 hover:text-[#071952] transition-colors"
                 >
                   <XCircle size={32} />

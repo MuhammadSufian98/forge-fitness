@@ -1,8 +1,12 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
+import useHomeShellStore from "@/stores/home/useHomeShellStore";
 
-export default function Sidebar({ activeSection, setActiveSection, isShrunk }) {
+export default function Sidebar() {
+  const activeSection = useHomeShellStore((state) => state.activeSection);
+  const setActiveSection = useHomeShellStore((state) => state.setActiveSection);
+  const isShrunk = useHomeShellStore((state) => state.isSidebarShrunk);
   const menuItems = [
     { icon: "home", label: "Home" },
     { icon: "fitness_center", label: "Plans" },

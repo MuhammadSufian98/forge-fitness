@@ -2,13 +2,13 @@
 
 import { motion } from "framer-motion";
 import { Sparkles, Headset, Mail } from "lucide-react";
+import useHomeShellStore from "@/stores/home/useHomeShellStore";
 
-export default function DesktopHeader({
-  activeSection,
-  isSidebarShrunk,
-  toggleSidebar,
-  setActiveSection,
-}) {
+export default function DesktopHeader() {
+  const activeSection = useHomeShellStore((state) => state.activeSection);
+  const isSidebarShrunk = useHomeShellStore((state) => state.isSidebarShrunk);
+  const toggleSidebar = useHomeShellStore((state) => state.toggleSidebar);
+  const setActiveSection = useHomeShellStore((state) => state.setActiveSection);
   if (activeSection === "Home") {
     return (
       <header className="sticky top-0 z-10 glass-panel border-b border-outline-variant px-8 py-4 hidden lg:flex items-center justify-between">

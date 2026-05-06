@@ -1,6 +1,7 @@
 "use client";
-import React, { useState } from "react";
+import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import useTrainersStore from "@/stores/home/useTrainersStore";
 import {
   Star,
   Award,
@@ -13,9 +14,13 @@ import {
 } from "lucide-react";
 
 export default function TrainersSection() {
-  const [selectedTrainer, setSelectedTrainer] = useState(null);
-  const [activeFilter, setActiveFilter] = useState("All");
-  const [rating, setRating] = useState(0);
+  const selectedTrainer = useTrainersStore((state) => state.selectedTrainer);
+  const activeFilter = useTrainersStore((state) => state.activeFilter);
+  const rating = useTrainersStore((state) => state.rating);
+  const setActiveFilter = useTrainersStore((state) => state.setActiveFilter);
+  const openTrainer = useTrainersStore((state) => state.openTrainer);
+  const closeTrainer = useTrainersStore((state) => state.closeTrainer);
+  const setRating = useTrainersStore((state) => state.setRating);
 
   const filters = ["All", "Strength", "HIIT", "Yoga", "Mobility"];
 
@@ -115,7 +120,7 @@ export default function TrainersSection() {
               <motion.div
                 key={trainer.id}
                 layoutId={`trainer-${trainer.id}`}
-                onClick={() => setSelectedTrainer(trainer)}
+                onClick={() => openTrainer(trainer)}
                 className="bg-white rounded-[2.5rem] overflow-hidden border border-[#071952]/5 shadow-sm cursor-pointer group hover:shadow-xl transition-all"
               >
                 <div className="h-64 relative overflow-hidden">
@@ -163,7 +168,7 @@ export default function TrainersSection() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setSelectedTrainer(null)}
+              onClick={closeTrainer}
               className="absolute inset-0 bg-[#071952]/60 backdrop-blur-md"
             />
 
@@ -181,7 +186,7 @@ export default function TrainersSection() {
 
               <div className="flex-1 p-10 lg:p-16 overflow-y-auto custom-scrollbar bg-white relative text-[#071952]">
                 <button
-                  onClick={() => setSelectedTrainer(null)}
+                  onClick={closeTrainer}
                   className="absolute top-10 right-10 text-[#071952]/20 hover:text-[#071952] transition-colors"
                 >
                   <XCircle size={32} />

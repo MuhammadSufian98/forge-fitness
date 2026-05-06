@@ -1,6 +1,8 @@
 "use client";
 import React from "react";
 import { motion } from "framer-motion";
+import useProfileStore from "@/stores/home/useProfileStore";
+import useAuthStore from "@/stores/auth/useAuthStore";
 import { 
   User, Mail, Phone, MapPin, 
   Dumbbell, Target, CreditCard, 
@@ -9,20 +11,8 @@ import {
 } from "lucide-react";
 
 export default function ProfileSection() {
-  const userProfile = {
-    name: "Sufian Hassan",
-    email: "sufianhassan98@gmail.com",
-    phone: "+92 300 0000000",
-    membership: "Pro Performance",
-    status: "Active",
-    joinDate: "Jan 2026",
-    goal: "Muscle Hypertrophy",
-    metrics: {
-      weight: "78kg",
-      height: "180cm",
-      bf: "14%"
-    }
-  };
+  const userProfile = useProfileStore((state) => state.userProfile);
+  const logout = useAuthStore((state) => state.logout);
 
   return (
     <div className="flex-1 bg-[#f2f3f6] overflow-hidden flex flex-col h-full relative font-sans">
@@ -151,7 +141,10 @@ export default function ProfileSection() {
             <button className="flex-1 py-5 bg-white border border-[#071952]/5 rounded-2xl text-[#071952] font-black uppercase text-[10px] tracking-widest hover:bg-[#071952] hover:text-white transition-all shadow-sm">
               Manage Biometric Data
             </button>
-            <button className="px-10 py-5 bg-red-500/10 text-red-500 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-red-500 hover:text-white transition-all flex items-center justify-center gap-3">
+            <button 
+              onClick={logout}
+              className="px-10 py-5 bg-red-500/10 text-red-500 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-red-500 hover:text-white transition-all flex items-center justify-center gap-3"
+            >
               <LogOut size={16} /> Sign Out
             </button>
           </div>

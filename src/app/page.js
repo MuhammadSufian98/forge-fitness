@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Sidebar from "@/components/home/Sidebar";
 import Header from "@/components/layout/Header";
 import DesktopHeader from "@/components/layout/DesktopHeader";
@@ -13,84 +12,41 @@ import TrialSection from "@/components/home/TrialSection";
 import ProfileSection from "@/components/home/ProfileSection";
 import ContactSection from "@/components/home/ContactUsSection";
 import MobileNav from "@/components/layout/MobileNav";
+import useHomeShellStore from "@/stores/home/useHomeShellStore";
 
 export default function Home() {
-  const [activeSection, setActiveSection] = useState("Home");
-  const [isSidebarShrunk, setIsSidebarShrunk] = useState(false);
-
-  const toggleSidebar = () => setIsSidebarShrunk(!isSidebarShrunk);
+  const activeSection = useHomeShellStore((state) => state.activeSection);
+  const isSidebarShrunk = useHomeShellStore((state) => state.isSidebarShrunk);
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-surface selection:bg-primary/10">
-      {/* Desktop Sidebar */}
-      <Sidebar
-        activeSection={activeSection}
-        setActiveSection={setActiveSection}
-        isShrunk={isSidebarShrunk}
-        setIsShrunk={setIsSidebarShrunk}
-      />
-
-      {/* Mobile Top Header */}
+      <Sidebar />
       <Header />
 
-      {/* Main Content Area */}
       <main
         className={`flex-1 flex flex-col h-full relative overflow-hidden transition-all duration-500 ease-[0.16,1,0.3,1] ${isSidebarShrunk ? "lg:pl-20" : "lg:pl-64"}`}
       >
-        <DesktopHeader
-          activeSection={activeSection}
-          isSidebarShrunk={isSidebarShrunk}
-          toggleSidebar={toggleSidebar}
-          setActiveSection={setActiveSection}
-        />
+        <DesktopHeader />
         {activeSection === "Home" ? (
-          <HomeSection
-            isSidebarShrunk={isSidebarShrunk}
-            toggleSidebar={toggleSidebar}
-          />
+          <HomeSection />
         ) : activeSection === "Plans" ? (
-          <PlansSection
-            isSidebarShrunk={isSidebarShrunk}
-            toggleSidebar={toggleSidebar}
-          />
+          <PlansSection />
         ) : activeSection === "Schedule" ? (
-          <ScheduleSection
-            isSidebarShrunk={isSidebarShrunk}
-            toggleSidebar={toggleSidebar}
-          />
+          <ScheduleSection />
         ) : activeSection === "Trainers" ? (
-          <TrainersSection
-            isSidebarShrunk={isSidebarShrunk}
-            toggleSidebar={toggleSidebar}
-          />
+          <TrainersSection />
         ) : activeSection === "Trial" ? (
-          <TrialSection
-            isSidebarShrunk={isSidebarShrunk}
-            toggleSidebar={toggleSidebar}
-          />
+          <TrialSection />
         ) : activeSection === "Profile" ? (
-          <ProfileSection
-            isSidebarShrunk={isSidebarShrunk}
-            toggleSidebar={toggleSidebar}
-          />
+          <ProfileSection />
         ) : activeSection === "Contact" ? (
-          <ContactSection
-            isSidebarShrunk={isSidebarShrunk}
-            toggleSidebar={toggleSidebar}
-          />
+          <ContactSection />
         ) : (
-          <ChatSection
-            isSidebarShrunk={isSidebarShrunk}
-            toggleSidebar={toggleSidebar}
-          />
+          <ChatSection />
         )}
       </main>
 
-      {/* Mobile Bottom Navigation */}
-      <MobileNav
-        activeSection={activeSection}
-        setActiveSection={setActiveSection}
-      />
+      <MobileNav />
     </div>
   );
 }

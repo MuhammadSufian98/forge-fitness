@@ -1,6 +1,7 @@
 "use client";
-import React, { useState } from "react";
+import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import useScheduleStore from "@/stores/home/useScheduleStore";
 import {
   Calendar,
   Clock,
@@ -13,8 +14,11 @@ import {
 } from "lucide-react";
 
 export default function ScheduleSection() {
-  const [selectedClass, setSelectedClass] = useState(null);
-  const [activeDate, setActiveDate] = useState(12);
+  const selectedClass = useScheduleStore((state) => state.selectedClass);
+  const activeDate = useScheduleStore((state) => state.activeDate);
+  const setActiveDate = useScheduleStore((state) => state.setActiveDate);
+  const openClass = useScheduleStore((state) => state.openClass);
+  const closeClass = useScheduleStore((state) => state.closeClass);
 
   const weekDays = [
     { day: "MON", date: 12 },
@@ -137,7 +141,7 @@ export default function ScheduleSection() {
 
                     <div className="flex items-center gap-3">
                       <button
-                        onClick={() => setSelectedClass(cls)}
+                        onClick={() => openClass(cls)}
                         className="p-4 bg-[#f2f3f6] text-[#071952] rounded-2xl hover:bg-[#071952] hover:text-white transition-all shadow-sm"
                       >
                         <Info size={20} />
@@ -162,7 +166,7 @@ export default function ScheduleSection() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setSelectedClass(null)}
+              onClick={closeClass}
               className="absolute inset-0 bg-[#071952]/60 backdrop-blur-md"
             />
 
@@ -176,7 +180,7 @@ export default function ScheduleSection() {
                     {selectedClass.level} Level
                   </span>
                   <button
-                    onClick={() => setSelectedClass(null)}
+                    onClick={closeClass}
                     className="text-white/20 hover:text-white"
                   >
                     <XCircle size={32} />

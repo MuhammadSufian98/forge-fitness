@@ -1,6 +1,7 @@
 "use client";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useRef, useEffect } from "react";
+import { useRef, useEffect } from "react";
+import useChatStore from "@/stores/home/useChatStore";
 import {
   Send,
   Mic,
@@ -15,7 +16,7 @@ import {
 } from "lucide-react";
 
 export default function ChatSection() {
-  const [inputValue, setInputValue] = useState("");
+  const { inputValue, setInputValue } = useChatStore();
   const scrollRef = useRef(null);
 
   // Auto-scroll logic for smooth conversational flow

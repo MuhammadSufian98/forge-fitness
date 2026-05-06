@@ -1,8 +1,10 @@
 "use client";
 
-import { motion } from "framer-motion";
+import useHomeShellStore from "@/stores/home/useHomeShellStore";
 
-export default function MobileNav({ activeSection, setActiveSection }) {
+export default function MobileNav() {
+  const activeSection = useHomeShellStore((state) => state.activeSection);
+  const setActiveSection = useHomeShellStore((state) => state.setActiveSection);
   const navItems = [
     { icon: "home", label: "Home" },
     { icon: "fitness_center", label: "Plans" },

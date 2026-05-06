@@ -1,6 +1,7 @@
 "use client";
-import React, { useState } from "react";
+import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import useContactStore from "@/stores/home/useContactStore";
 import {
   Mail,
   Phone,
@@ -13,11 +14,15 @@ import {
 } from "lucide-react";
 
 export default function ContactSection() {
-  const [isSent, setIsSent] = useState(false);
+  const isSent = useContactStore((state) => state.isSent);
+  const form = useContactStore((state) => state.form);
+  const setContactField = useContactStore((state) => state.setContactField);
+  const submitContact = useContactStore((state) => state.submitContact);
+  const resetContact = useContactStore((state) => state.resetContact);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    setIsSent(true);
+    submitContact();
   };
 
   return (
@@ -130,6 +135,10 @@ export default function ContactSection() {
                           </label>
                           <input
                             required
+                            value={form.name}
+                            onChange={(e) =>
+                              setContactField("name", e.target.value)
+                            }
                             className="w-full bg-[#f2f3f6] border-none rounded-2xl py-4 px-6 text-[#071952] font-bold text-sm focus:ring-2 focus:ring-[#35a29f] outline-none transition-all"
                             placeholder="Sufian Hassan"
                           />
@@ -138,7 +147,13 @@ export default function ContactSection() {
                           <label className="text-[10px] font-black text-[#071952]/30 uppercase tracking-widest ml-2">
                             Request Type
                           </label>
-                          <select className="w-full bg-[#f2f3f6] border-none rounded-2xl py-4 px-6 text-[#071952] font-bold text-sm focus:ring-2 focus:ring-[#35a29f] outline-none appearance-none cursor-pointer">
+                          <select
+                            value={form.requestType}
+                            onChange={(e) =>
+                              setContactField("requestType", e.target.value)
+                            }
+                            className="w-full bg-[#f2f3f6] border-none rounded-2xl py-4 px-6 text-[#071952] font-bold text-sm focus:ring-2 focus:ring-[#35a29f] outline-none appearance-none cursor-pointer"
+                          >
                             <option>General Support</option>
                             <option>Corporate Partnership</option>
                             <option>Personal Trainer Request</option>
@@ -153,6 +168,10 @@ export default function ContactSection() {
                         </label>
                         <textarea
                           required
+                          value={form.message}
+                          onChange={(e) =>
+                            setContactField("message", e.target.value)
+                          }
                           className="w-full bg-[#f2f3f6] border-none rounded-2xl py-4 px-6 text-[#071952] font-bold text-sm focus:ring-2 focus:ring-[#35a29f] outline-none transition-all min-h-[150px] shadow-inner"
                           placeholder="How can we assist your performance evolution?"
                         />
@@ -190,7 +209,7 @@ export default function ContactSection() {
                       </p>
                     </div>
                     <button
-                      onClick={() => setIsSent(false)}
+                      onClick={resetContact}
                       className="px-8 py-3 bg-[#f2f3f6] text-[#071952] rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-[#071952] hover:text-white transition-all"
                     >
                       New Message

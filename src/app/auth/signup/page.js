@@ -2,9 +2,19 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
+import useAuthStore from "@/stores/auth/useAuthStore";
 
 export default function SignupPage() {
-  return (
+  const signup = useAuthStore((state) => state.signup);
+  const setSignupField = useAuthStore((state) => state.setSignupField);
+  const signupSubmit = useAuthStore((state) => state.signupSubmit);
+  const isLoading = useAuthStore((state) => state.isLoading);
+  const error = useAuthStore((state) => state.error);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    await signupSubmit();
+  };
     <div className="bg-surface-container-low font-body-md text-on-surface min-h-screen selection:bg-secondary-container antialiased">
       <main className="min-h-screen flex">
         {/* Left Column: Hero Brand Image */}
@@ -55,7 +65,7 @@ export default function SignupPage() {
                 <p className="text-on-surface-variant font-body-md">Start your journey to peak performance today.</p>
               </header>
 
-              <form className="space-y-md" onSubmit={(e) => e.preventDefault()}>
+              <form className="space-y-md" onSubmit={handleSubmit}>
                 {/* Full Name */}
                 <div className="space-y-xs">
                   <label className="font-label-caps text-label-caps text-on-surface-variant ml-xs uppercase">FULL NAME</label>
@@ -65,6 +75,9 @@ export default function SignupPage() {
                       className="w-full pl-[48px] pr-md py-md bg-white border border-outline-variant rounded-xl focus:ring-2 focus:ring-secondary/20 focus:border-secondary transition-all outline-none placeholder:text-outline-variant text-body-md" 
                       placeholder="Enter your full name" 
                       type="text"
+                      value={signup.fullName}
+                      onChange={(e) => setSignupField("fullName", e.target.value)}
+                      required
                     />
                   </div>
                 </div>
@@ -78,6 +91,9 @@ export default function SignupPage() {
                       className="w-full pl-[48px] pr-md py-md bg-white border border-outline-variant rounded-xl focus:ring-2 focus:ring-secondary/20 focus:border-secondary transition-all outline-none placeholder:text-outline-variant text-body-md" 
                       placeholder="name@example.com" 
                       type="email"
+                      value={signup.email}
+                      onChange={(e) => setSignupField("email", e.target.value)}
+                      required
                     />
                   </div>
                 </div>
@@ -91,6 +107,9 @@ export default function SignupPage() {
                       className="w-full pl-[48px] pr-md py-md bg-white border border-outline-variant rounded-xl focus:ring-2 focus:ring-secondary/20 focus:border-secondary transition-all outline-none placeholder:text-outline-variant text-body-md" 
                       placeholder="••••••••" 
                       type="password"
+                      value={signup.password}
+                      onChange={(e) => setSignupField("password", e.target.value)}
+                      required
                     />
                   </div>
                 </div>
@@ -100,8 +119,13 @@ export default function SignupPage() {
                   <label className="font-label-caps text-label-caps text-on-surface-variant ml-xs uppercase">FITNESS GOAL</label>
                   <div className="relative group">
                     <span className="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-outline group-focus-within:text-secondary transition-colors">ads_click</span>
-                    <select className="w-full pl-[48px] pr-md py-md bg-white border border-outline-variant rounded-xl focus:ring-2 focus:ring-secondary/20 focus:border-secondary transition-all outline-none appearance-none cursor-pointer text-body-md">
-                      <option disabled selected value="">Select your primary goal</option>
+                    <select 
+                      className="w-full pl-[48px] pr-md py-md bg-white border border-outline-variant rounded-xl focus:ring-2 focus:ring-secondary/20 focus:border-secondary transition-all outline-none appearance-none cursor-pointer text-body-md"
+                      value={signup.goal}
+                      onChange={(e) => setSignupField("goal", e.target.value)}
+                      required
+                    >
+                      <option disabled value="">Select your primary goal</option>
                       <option>Build Strength & Muscle</option>
                       <option>Weight Loss & Tone</option>
                       <option>Endurance & Cardio</option>
@@ -111,10 +135,20 @@ export default function SignupPage() {
                   </div>
                 </div>
 
+                {error && (
+                  <div className="p-md bg-red-50 border border-red-200 rounded-lg text-red-700 text-body-sm font-bold">
+                    {error}
+                  </div>
+                )}
+
                 {/* Submit Button */}
                 <div className="pt-md">
-                  <button className="w-full py-md bg-primary-container text-white font-h3 rounded-full hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-primary-container/20 flex items-center justify-center gap-sm uppercase tracking-widest">
-                    SIGN UP
+                  <button 
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full py-md bg-primary-container text-white font-h3 rounded-full hover:scale-[1.02] active:scale-95 disabled:opacity-50 transition-all shadow-lg shadow-primary-container/20 flex items-center justify-center gap-sm uppercase tracking-widest"
+                  >
+                    {isLoading ? "SIGNING UP..." : "SIGN UP"}
                     <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
                   </button>
                 </div>

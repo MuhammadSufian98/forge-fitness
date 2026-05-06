@@ -2,6 +2,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import useAuthStore from "@/stores/auth/useAuthStore";
 import {
   Mail,
   Lock,
@@ -12,6 +13,17 @@ import {
 } from "lucide-react";
 
 export default function LoginPage() {
+  const login = useAuthStore((state) => state.login);
+  const setLoginField = useAuthStore((state) => state.setLoginField);
+  const loginSubmit = useAuthStore((state) => state.loginSubmit);
+  const isLoading = useAuthStore((state) => state.isLoading);
+  const error = useAuthStore((state) => state.error);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    await loginSubmit();
+  };
+
   return (
     <div className="h-screen w-full bg-[#f2f3f6] flex items-center justify-center p-4 md:p-6 font-sans antialiased overflow-hidden">
       {/* Background Decorative Mesh */}
@@ -100,7 +112,7 @@ export default function LoginPage() {
               </p>
             </header>
 
-            <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+            <form className="space-y-4" onSubmit={handleSubmit}>
               <div className="space-y-1.5">
                 <label className="text-[9px] font-black text-[#071952]/30 uppercase tracking-[0.2em] ml-1">
                   Email Identity
@@ -112,6 +124,8 @@ export default function LoginPage() {
                   />
                   <input
                     type="email"
+                    value={login.email}
+                    onChange={(e) => setLoginField("email", e.target.value)}
                     placeholder="athlete@peakform.com"
                     className="w-full bg-[#f2f3f6] border-none rounded-xl py-3.5 pl-12 pr-4 text-[#071952] font-bold text-xs focus:ring-1 focus:ring-[#35a29f] transition-all outline-none"
                   />
@@ -134,22 +148,32 @@ export default function LoginPage() {
                   />
                   <input
                     type="password"
+                    value={login.password}
+                    onChange={(e) => setLoginField("password", e.target.value)}
                     placeholder="••••••••"
                     className="w-full bg-[#f2f3f6] border-none rounded-xl py-3.5 pl-12 pr-4 text-[#071952] font-bold text-xs focus:ring-1 focus:ring-[#35a29f] transition-all outline-none"
                   />
                 </div>
               </div>
 
+              {error && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-[9px] font-bold">
+                  {error}
+                </div>
+              )}
+
               <div className="pt-2">
-                <Link href="/">
-                  <button className="w-full py-4 bg-[#071952] text-white rounded-xl font-black uppercase tracking-[0.2em] text-[10px] hover:bg-[#088395] transition-all shadow-lg flex items-center justify-center gap-2 group">
-                    Go to Dashboard
-                    <ArrowRight
-                      size={16}
-                      className="group-hover:translate-x-1 transition-transform"
-                    />
-                  </button>
-                </Link>
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full py-4 bg-[#071952] text-white rounded-xl font-black uppercase tracking-[0.2em] text-[10px] hover:bg-[#088395] disabled:opacity-50 transition-all shadow-lg flex items-center justify-center gap-2 group"
+                >
+                  {isLoading ? "Authorizing..." : "Go to Dashboard"}
+                  <ArrowRight
+                    size={16}
+                    className="group-hover:translate-x-1 transition-transform"
+                  />
+                </button>
               </div>
             </form>
 

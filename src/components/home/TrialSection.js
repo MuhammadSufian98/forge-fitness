@@ -1,6 +1,7 @@
 "use client";
-import React, { useState } from "react";
+import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import useTrialStore from "@/stores/home/useTrialStore";
 import {
   User,
   Phone,
@@ -14,12 +15,15 @@ import {
 } from "lucide-react";
 
 export default function TrialSection() {
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const isSubmitted = useTrialStore((state) => state.isSubmitted);
+  const form = useTrialStore((state) => state.form);
+  const setTrialField = useTrialStore((state) => state.setTrialField);
+  const submitTrial = useTrialStore((state) => state.submitTrial);
+  const resetTrial = useTrialStore((state) => state.resetTrial);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    setIsSubmitted(true);
-    // This captures Name, Phone, and Goal as required by your boss
+    submitTrial();
   };
 
   return (
@@ -99,6 +103,10 @@ export default function TrialSection() {
                         <input
                           required
                           type="text"
+                          value={form.fullName}
+                          onChange={(e) =>
+                            setTrialField("fullName", e.target.value)
+                          }
                           placeholder="Sufian Hassan"
                           className="w-full bg-[#f2f3f6] border-none rounded-2xl py-5 pl-14 pr-6 text-[#071952] font-bold focus:ring-2 focus:ring-[#35a29f] outline-none transition-all"
                         />
@@ -117,6 +125,8 @@ export default function TrialSection() {
                         <input
                           required
                           type="tel"
+                          value={form.phone}
+                          onChange={(e) => setTrialField("phone", e.target.value)}
                           placeholder="+92 300 0000000"
                           className="w-full bg-[#f2f3f6] border-none rounded-2xl py-5 pl-14 pr-6 text-[#071952] font-bold focus:ring-2 focus:ring-[#35a29f] outline-none transition-all"
                         />
@@ -134,6 +144,8 @@ export default function TrialSection() {
                         />
                         <select
                           required
+                          value={form.goal}
+                          onChange={(e) => setTrialField("goal", e.target.value)}
                           className="w-full bg-[#f2f3f6] border-none rounded-2xl py-5 pl-14 pr-10 text-[#071952] font-bold focus:ring-2 focus:ring-[#35a29f] outline-none appearance-none cursor-pointer"
                         >
                           <option value="">Select a goal</option>
@@ -192,7 +204,7 @@ export default function TrialSection() {
                 </div>
 
                 <button
-                  onClick={() => setIsSubmitted(false)}
+                  onClick={resetTrial}
                   className="px-10 py-4 bg-[#f2f3f6] text-[#071952] rounded-2xl font-black uppercase text-[10px] tracking-widest border border-[#071952]/5 hover:bg-[#071952] hover:text-white transition-all"
                 >
                   Done
