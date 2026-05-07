@@ -80,6 +80,23 @@ const UserSchema = new mongoose.Schema({
     enum: ['Active', 'Inactive', 'Pending'],
     default: 'Active',
   },
+  // Athlete Metrics
+  kcal: {
+    type: Number,
+    default: 0,
+  },
+  activeMinutes: {
+    type: Number,
+    default: 0,
+  },
+  heartRate: {
+    type: Number,
+    default: 0,
+  },
+  sleepScore: {
+    type: Number,
+    default: 0,
+  },
   // Admin Specific
   clearanceLevel: {
     type: Number,

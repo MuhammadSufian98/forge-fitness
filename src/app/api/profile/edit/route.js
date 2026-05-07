@@ -1,95 +1,81 @@
-import dbConnect from '@/lib/mongodb';
-import User from '@/models/User';
-import { getAuthUser, hashPassword } from '@/lib/auth';
-import { ApiResponse } from '@/lib/response';
-import { z } from 'zod';
-
-const profileUpdateSchema = z.object({
-  fullName: z.string().min(2, 'Full name must be at least 2 characters').optional(),
-  email: z.string().email('Invalid email address').optional(),
-  password: z.string().min(6, 'Password must be at least 6 characters').optional(),
-  phoneNumber: z.string().optional(),
-  bio: z.string().max(500, 'Bio must be less than 500 characters').optional(),
-  coachingPhilosophy: z.string().optional(),
-  profileImage: z.string().url('Invalid image URL').or(z.literal('')).optional(),
-  fitnessGoals: z.string().optional(),
-  accreditations: z.array(z.string()).optional(),
-  // Admin specific (only editable by admin, but we'll allow self-edit for some fields if role matches)
-  adminNotes: z.string().optional(),
-});
-
-// Simple sanitization function to strip HTML tags
-const sanitize = (str) => {
-  if (!str) return str;
-  return str.replace(/<[^>]*>?/gm, '');
-};
+import { ApiResponse } from "@/lib/response";
+import { getAuthUser } from "@/lib/auth";
+import connectDB from "@/lib/mongodb";
+import User from "@/models/User";
+import bcrypt from "bcryptjs";
 
 export async function PATCH(req) {
   try {
+    await connectDB();
     const authUser = await getAuthUser();
+
     if (!authUser) {
-      return ApiResponse({
-        success: false,
-        message: 'Unauthorized',
-        status: 401,
-      });
+      return ApiResponse({ success: false, message: "Unauthorized", status: 401 });
     }
 
-    await dbConnect();
     const body = await req.json();
+    const { 
+      fullName, 
+      phoneNumber, 
+      bio, 
+      fitnessGoals, 
+      coachingPhilosophy, 
+      adminNotes,
+      password 
+    } = body;
 
-    // Validate input
-    const validation = profileUpdateSchema.safeParse(body);
-    if (!validation.success) {
-      return ApiResponse({
-        success: false,
-        message: validation.error.errors[0].message,
-        status: 400,
-      });
-    }
-
-    // Sanitize text fields
-    const sanitizedData = { ...validation.data };
-    if (sanitizedData.bio) sanitizedData.bio = sanitize(sanitizedData.bio);
-    if (sanitizedData.coachingPhilosophy) sanitizedData.coachingPhilosophy = sanitize(sanitizedData.coachingPhilosophy);
-    if (sanitizedData.adminNotes) sanitizedData.adminNotes = sanitize(sanitizedData.adminNotes);
-    if (sanitizedData.fitnessGoals) sanitizedData.fitnessGoals = sanitize(sanitizedData.fitnessGoals);
-
-    // Handle password update
-    if (sanitizedData.password) {
-      sanitizedData.password = await hashPassword(sanitizedData.password);
-    }
-
-    // Filter out undefined fields
-    const updateData = Object.fromEntries(
-      Object.entries(sanitizedData).filter(([_, v]) => v !== undefined)
-    );
-
-    const user = await User.findByIdAndUpdate(
-      authUser.id,
-      { $set: updateData },
-      { new: true, runValidators: true }
-    ).select('+password');
-
+    // Find the user to update
+    const user = await User.findById(authUser._id);
     if (!user) {
-      return ApiResponse({
-        success: false,
-        message: 'User not found',
-        status: 404,
-      });
+      return ApiResponse({ success: false, message: "User not found", status: 404 });
     }
 
-    return ApiResponse({
-      success: true,
-      message: 'Profile updated successfully',
-      data: user,
+    // Role-based field restrictions
+    if (fullName) user.fullName = fullName;
+    if (phoneNumber) user.phoneNumber = phoneNumber;
+    if (bio) user.bio = bio;
+
+    // Athlete specific
+    if (user.role === 'athlete') {
+      if (fitnessGoals) user.fitnessGoals = fitnessGoals;
+    }
+
+    // Coach specific
+    if (user.role === 'coach') {
+      if (coachingPhilosophy) user.coachingPhilosophy = coachingPhilosophy;
+    }
+
+    // Admin specific
+    if (user.role === 'admin') {
+      if (adminNotes) user.adminNotes = adminNotes;
+    }
+
+    // Password update with hashing
+    if (password && password.trim() !== "") {
+      const salt = await bcrypt.genSalt(10);
+      user.password = await bcrypt.hash(password, salt);
+    }
+
+    await user.save();
+
+    // Remove password from response
+    const updatedUser = user.toObject();
+    delete updatedUser.password;
+
+    return ApiResponse({ 
+      success: true, 
+      message: "Profile synchronized successfully", 
+      data: updatedUser 
     });
+
   } catch (error) {
-    console.error('Profile Edit error:', error);
-    return ApiResponse({
-      success: false,
-      message: 'Internal server error',
-      status: 500,
-    });
+    console.error("Profile Update Error:", error);
+    
+    // Handle duplicate key errors (e.g., email if allowed to change, but here we don't)
+    if (error.code === 11000) {
+      return ApiResponse({ success: false, message: "Duplicate field value detected", status: 400 });
+    }
+
+    return ApiResponse({ success: false, message: "System synchronization failure", status: 500 });
   }
 }

@@ -16,6 +16,7 @@ import {
 
 export default function TrialSection() {
   const isSubmitted = useTrialStore((state) => state.isSubmitted);
+  const isLoading = useTrialStore((state) => state.isLoading);
   const form = useTrialStore((state) => state.form);
   const setTrialField = useTrialStore((state) => state.setTrialField);
   const submitTrial = useTrialStore((state) => state.submitTrial);
@@ -164,9 +165,10 @@ export default function TrialSection() {
 
                     <button
                       type="submit"
-                      className="w-full py-6 bg-[#071952] text-white rounded-[1.5rem] font-black uppercase tracking-[0.2em] text-xs hover:bg-[#088395] transition-all shadow-xl shadow-[#071952]/20 flex items-center justify-center gap-3 group"
+                      disabled={isLoading}
+                      className="w-full py-6 bg-[#071952] text-white rounded-[1.5rem] font-black uppercase tracking-[0.2em] text-xs hover:bg-[#088395] transition-all shadow-xl shadow-[#071952]/20 flex items-center justify-center gap-3 group disabled:opacity-50"
                     >
-                      Initialize Trial{" "}
+                      {isLoading ? "PROVISIONING..." : "Join the Elite"}{" "}
                       <ArrowRight
                         size={18}
                         className="group-hover:translate-x-2 transition-transform"
@@ -218,7 +220,7 @@ export default function TrialSection() {
                   onClick={resetTrial}
                   className="px-12 py-5 bg-[#071952] text-white rounded-2xl font-black uppercase text-xs tracking-[0.2em] shadow-xl shadow-[#071952]/20 hover:bg-[#088395] active:scale-95 transition-all"
                 >
-                  Return to Terminal
+                  Sign In
                 </button>
               </motion.div>
             )}

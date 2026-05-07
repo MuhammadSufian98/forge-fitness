@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { trialApi } from "@/utils/authApi";
+import { isRequestCanceled } from "@/utils/axiosInstance";
 
 const initialTrialForm = {
   fullName: "",
@@ -29,6 +30,11 @@ const useTrialStore = create((set, get) => ({
         set({ error: data.message, isLoading: false });
       }
     } catch (err) {
+      if (isRequestCanceled(err)) {
+        set({ isLoading: false });
+        return;
+      }
+
       set({ error: "Failed to submit trial application", isLoading: false });
     }
   },

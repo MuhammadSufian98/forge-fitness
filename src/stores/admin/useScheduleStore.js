@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { scheduleApi } from "@/utils/authApi";
+import { isRequestCanceled } from "@/utils/axiosInstance";
 
 const useScheduleStore = create((set, get) => ({
   schedules: [],
@@ -28,6 +29,11 @@ const useScheduleStore = create((set, get) => ({
         set({ error: data.message, isLoading: false });
       }
     } catch (err) {
+      if (isRequestCanceled(err)) {
+        set({ isLoading: false });
+        return;
+      }
+
       set({ error: "Failed to fetch schedules", isLoading: false });
     }
   },
@@ -69,6 +75,11 @@ const useScheduleStore = create((set, get) => ({
         return { success: false, message: data.message };
       }
     } catch (err) {
+      if (isRequestCanceled(err)) {
+        set({ isLoading: false });
+        return { success: false, cancelled: true };
+      }
+
       set({ error: "Failed to deploy protocol", isLoading: false });
       return { success: false, message: "Network error" };
     }
@@ -89,6 +100,11 @@ const useScheduleStore = create((set, get) => ({
         return { success: false, message: data.message };
       }
     } catch (err) {
+      if (isRequestCanceled(err)) {
+        set({ isLoading: false });
+        return { success: false, cancelled: true };
+      }
+
       set({ error: "Failed to delete schedule", isLoading: false });
       return { success: false, message: "Network error" };
     }
@@ -109,6 +125,11 @@ const useScheduleStore = create((set, get) => ({
         return { success: false, message: data.message };
       }
     } catch (err) {
+      if (isRequestCanceled(err)) {
+        set({ isLoading: false });
+        return { success: false, cancelled: true };
+      }
+
       set({ error: "Failed to update schedule", isLoading: false });
       return { success: false, message: "Network error" };
     }

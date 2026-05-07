@@ -112,7 +112,7 @@ export default function LoginPage() {
           >
             <header className="text-center md:text-left space-y-1">
               <h2 className="text-3xl font-black text-[#071952] uppercase tracking-tighter italic leading-none">
-                Welcome <span className="text-[#088395] not-italic">Back</span>
+                Sign <span className="text-[#088395] not-italic">In</span>
               </h2>
               <p className="text-[#071952]/40 text-[9px] font-black uppercase tracking-[0.2em]">
                 Authorized Access Only
@@ -175,7 +175,7 @@ export default function LoginPage() {
                   disabled={isLoading}
                   className="w-full py-4 bg-[#071952] text-white rounded-xl font-black uppercase tracking-[0.2em] text-[10px] hover:bg-[#088395] disabled:opacity-50 transition-all shadow-lg flex items-center justify-center gap-2 group"
                 >
-                  {isLoading ? "Authorizing..." : "Go to Dashboard"}
+                  {isLoading ? "Authorizing..." : "SIGN IN"}
                   <ArrowRight
                     size={16}
                     className="group-hover:translate-x-1 transition-transform"
@@ -192,7 +192,7 @@ export default function LoginPage() {
                 href="/auth/signup"
                 className="inline-flex items-center gap-2 bg-[#f2f3f6] px-6 py-3 rounded-lg text-[#071952] font-black text-[9px] uppercase tracking-[0.2em] hover:bg-[#071952] hover:text-white transition-all group"
               >
-                New to the Forge? Join Now
+                Join the Elite
                 <Dumbbell
                   size={14}
                   className="group-hover:rotate-12 transition-transform"

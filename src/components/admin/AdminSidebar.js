@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { LogIn, User } from "lucide-react";
+import { LogIn, User, LogOut } from "lucide-react";
 import useAuthStore from "@/stores/auth/useAuthStore";
 
 export default function AdminSidebar({
@@ -11,7 +11,7 @@ export default function AdminSidebar({
   isShrunk,
 }) {
   const router = useRouter();
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, logout } = useAuthStore();
   const userRole = user?.role;
 
   // Role-based menu items
@@ -31,7 +31,13 @@ export default function AdminSidebar({
 
   const menuItems = userRole === "coach" ? coachMenuItems : adminMenuItems;
 
-  const initials = user?.fullName?.split(" ").map(n => n[0]).join("").toUpperCase().substring(0, 2) || "??";
+  const initials =
+    user?.fullName
+      ?.split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .substring(0, 2) || "??";
 
   return (
     <motion.nav
@@ -129,19 +135,25 @@ export default function AdminSidebar({
         })}
       </div>
 
-      <div className={`mt-auto ${isShrunk ? "items-center" : "px-md"}`}>
+      <div className={`mt-auto ${isShrunk ? "items-center px-2" : "px-md"}`}>
         {isAuthenticated && user ? (
-          <div className="glass-panel p-md rounded-xl bg-white/5 border-white/10 border backdrop-blur-md">
+          <div
+            className={`glass-panel rounded-xl bg-white/5 border-white/10 border backdrop-blur-md flex items-center ${isShrunk ? "flex-col p-2 gap-4" : "p-2 justify-between"}`}
+          >
             <div
               onClick={(e) => {
                 e.preventDefault();
                 setActiveSection("Profile");
               }}
-              className="flex items-center gap-sm cursor-pointer"
+              className={`flex items-center cursor-pointer overflow-hidden ${isShrunk ? "justify-center" : "gap-sm flex-1"}`}
             >
-              <div className="w-10 h-10 rounded-full border border-primary-fixed-dim bg-[#071952] flex items-center justify-center text-[10px] font-black italic overflow-hidden">
+              <div className="w-10 h-10 rounded-full border border-primary-fixed-dim bg-[#071952] flex items-center justify-center text-[10px] font-black italic shrink-0 overflow-hidden">
                 {user.profileImage ? (
-                  <img src={user.profileImage} alt={user.fullName} className="w-full h-full object-cover" />
+                  <img
+                    src={user.profileImage}
+                    alt={user.fullName}
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
                   initials
                 )}
@@ -161,6 +173,17 @@ export default function AdminSidebar({
                 </motion.div>
               )}
             </div>
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                logout();
+              }}
+              className="p-2 text-primary-fixed-dim hover:text-white hover:bg-white/10 transition-all rounded-lg"
+              title="Sign Out"
+            >
+              <LogOut size={16} />
+            </button>
           </div>
         ) : (
           <div className="glass-panel p-md rounded-xl bg-white/5 border-white/10 border backdrop-blur-md hover:bg-white/10 transition-all cursor-pointer">

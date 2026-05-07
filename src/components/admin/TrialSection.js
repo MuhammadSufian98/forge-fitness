@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Mail,
@@ -34,20 +34,19 @@ export default function TrialLeadsSection() {
     message: ""
   });
 
-  useEffect(() => {
+  const loadLeads = useCallback(() => {
     fetchLeads();
   }, [fetchLeads]);
 
   useEffect(() => {
-    if (selectedLead) {
-        setReplyData({
-            subject: "FORGE FITNESS // Your 7-Day Access Granted",
-            message: `Hello ${selectedLead.name},\n\nYour request for ${selectedLead.goal} has been approved. Your trial protocol starts tomorrow. Prepare for elite performance.\n\n— Forge Management`
-        });
-    }
-  }, [selectedLead]);
+    loadLeads();
+  }, [loadLeads]);
 
   const handleReplyClick = (lead) => {
+    setReplyData({
+      subject: "FORGE FITNESS // Your 7-Day Access Granted",
+      message: `Hello ${lead.name},\n\nYour request for ${lead.goal} has been approved. Your trial protocol starts tomorrow. Prepare for elite performance.\n\n-- Forge Management`,
+    });
     setSelectedLead(lead);
     setIsMailOpen(true);
   };

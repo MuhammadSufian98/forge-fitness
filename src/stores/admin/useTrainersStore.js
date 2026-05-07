@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { trainersApi } from "@/utils/authApi";
+import { isRequestCanceled } from "@/utils/axiosInstance";
 
 export const SPECIALIZATION_OPTIONS = [
   "Strength",
@@ -44,6 +45,11 @@ const useTrainersStore = create((set, get) => ({
         set({ error: data.message, isLoading: false });
       }
     } catch (err) {
+      if (isRequestCanceled(err)) {
+        set({ isLoading: false });
+        return;
+      }
+
       set({ error: "Failed to fetch trainers", isLoading: false });
     }
   },
@@ -78,6 +84,11 @@ const useTrainersStore = create((set, get) => ({
         return { success: false, message: data.message };
       }
     } catch (err) {
+      if (isRequestCanceled(err)) {
+        set({ isLoading: false });
+        return { success: false, cancelled: true };
+      }
+
       set({ error: "Failed to add trainer", isLoading: false });
       return { success: false, message: "Network error" };
     }
@@ -99,6 +110,11 @@ const useTrainersStore = create((set, get) => ({
         return { success: false, message: data.message };
       }
     } catch (err) {
+      if (isRequestCanceled(err)) {
+        set({ isLoading: false });
+        return { success: false, cancelled: true };
+      }
+
       set({ error: "Failed to update trainer", isLoading: false });
       return { success: false, message: "Network error" };
     }
@@ -120,6 +136,11 @@ const useTrainersStore = create((set, get) => ({
         return { success: false, message: data.message };
       }
     } catch (err) {
+      if (isRequestCanceled(err)) {
+        set({ isLoading: false });
+        return { success: false, cancelled: true };
+      }
+
       set({ error: "Failed to offboard trainer", isLoading: false });
       return { success: false, message: "Network error" };
     }

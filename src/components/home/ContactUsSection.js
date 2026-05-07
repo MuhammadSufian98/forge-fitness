@@ -15,6 +15,7 @@ import {
 
 export default function ContactSection() {
   const isSent = useContactStore((state) => state.isSent);
+  const isLoading = useContactStore((state) => state.isLoading);
   const form = useContactStore((state) => state.form);
   const setContactField = useContactStore((state) => state.setContactField);
   const submitContact = useContactStore((state) => state.submitContact);
@@ -179,9 +180,10 @@ export default function ContactSection() {
 
                       <button
                         type="submit"
-                        className="w-full py-5 bg-[#071952] text-white rounded-[1.5rem] font-black uppercase tracking-[0.2em] text-xs hover:bg-[#088395] transition-all shadow-xl shadow-[#071952]/20 flex items-center justify-center gap-3 group"
+                        disabled={isLoading}
+                        className="w-full py-5 bg-[#071952] text-white rounded-[1.5rem] font-black uppercase tracking-[0.2em] text-xs hover:bg-[#088395] transition-all shadow-xl shadow-[#071952]/20 flex items-center justify-center gap-3 group disabled:opacity-50"
                       >
-                        Transmit Inquiry{" "}
+                        {isLoading ? "TRANSMITTING..." : "Transmit Inquiry"}{" "}
                         <Send
                           size={16}
                           className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform"

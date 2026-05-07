@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { subscriptionsApi } from "@/utils/authApi";
+import { isRequestCanceled } from "@/utils/axiosInstance";
 
 const usePlansStore = create((set, get) => ({
   athletes: [],
@@ -23,6 +24,11 @@ const usePlansStore = create((set, get) => ({
         set({ error: data.message, isLoading: false });
       }
     } catch (err) {
+      if (isRequestCanceled(err)) {
+        set({ isLoading: false });
+        return;
+      }
+
       set({ error: "Failed to fetch athletes", isLoading: false });
     }
   },
@@ -46,6 +52,11 @@ const usePlansStore = create((set, get) => ({
         set({ error: data.message, isLoading: false });
       }
     } catch (err) {
+      if (isRequestCanceled(err)) {
+        set({ isLoading: false });
+        return;
+      }
+
       set({ error: "Action failed", isLoading: false });
     }
   },

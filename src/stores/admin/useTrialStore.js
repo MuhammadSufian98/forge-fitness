@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { trialApi } from "@/utils/authApi";
+import { isRequestCanceled } from "@/utils/axiosInstance";
 
 const useTrialStore = create((set, get) => ({
   leads: [],
@@ -21,6 +22,11 @@ const useTrialStore = create((set, get) => ({
         set({ error: data.message, isLoading: false });
       }
     } catch (err) {
+      if (isRequestCanceled(err)) {
+        set({ isLoading: false });
+        return;
+      }
+
       set({ error: "Failed to fetch leads", isLoading: false });
     }
   },
@@ -44,6 +50,11 @@ const useTrialStore = create((set, get) => ({
         return { success: false, message: data.message };
       }
     } catch (err) {
+      if (isRequestCanceled(err)) {
+        set({ isLoading: false });
+        return { success: false, cancelled: true };
+      }
+
       set({ error: "Failed to send reply", isLoading: false });
       return { success: false, message: "Network error" };
     }

@@ -67,7 +67,7 @@ export default function SignupPage() {
               className="glass-card rounded-[2rem] p-xl bg-white/85 backdrop-blur-[20px] border border-white/30 shadow-xl"
             >
               <header className="mb-xl text-center">
-                <h1 className="font-h2 text-h2 text-primary mb-xs">Create Your Account</h1>
+                <h1 className="font-h2 text-h2 text-primary mb-xs">Join the Elite</h1>
                 <p className="text-on-surface-variant font-body-md">Start your journey to peak performance today.</p>
               </header>
 
@@ -154,7 +154,7 @@ export default function SignupPage() {
                     disabled={isLoading}
                     className="w-full py-md bg-primary-container text-white font-h3 rounded-full hover:scale-[1.02] active:scale-95 disabled:opacity-50 transition-all shadow-lg shadow-primary-container/20 flex items-center justify-center gap-sm uppercase tracking-widest"
                   >
-                    {isLoading ? "SIGNING UP..." : "SIGN UP"}
+                    {isLoading ? "PROVISIONING..." : "JOIN THE ELITE"}
                     <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
                   </button>
                 </div>

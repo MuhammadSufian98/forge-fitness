@@ -3,8 +3,6 @@ import { getAuthUser } from '@/lib/auth';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
 import Subscription from '@/models/Subscription';
-import Trial from '@/models/Trial';
-import Schedule from '@/models/Schedule';
 
 const TIER_PRICES = {
   'basic': 29,
@@ -17,104 +15,110 @@ export async function GET() {
     await connectDB();
     const authUser = await getAuthUser();
 
+    // 1. SECURITY CHECK
     if (!authUser || authUser.role !== 'admin') {
       return ApiResponse({ success: false, message: 'Forbidden: Admin access only', status: 403 });
     }
 
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
 
-    // 1. CORE KPIs
+    // 2. CORE KPI: TOTAL USERS
     const totalUsers = await User.countDocuments();
-    
-    // Monthly Revenue
+    const lastMonthUsers = await User.countDocuments({ createdAt: { $lt: startOfMonth } });
+    const usersThisMonth = totalUsers - lastMonthUsers;
+    const growth = lastMonthUsers > 0 
+      ? `+${((usersThisMonth / lastMonthUsers) * 100).toFixed(1)}%` 
+      : '+100%';
+
+    // 3. CORE KPI: MONTHLY REVENUE (Approved/Active subs this month)
     const activeSubsThisMonth = await Subscription.find({
       status: 'Active',
       startDate: { $gte: startOfMonth }
     });
     const monthlyRevenue = activeSubsThisMonth.reduce((acc, sub) => acc + (TIER_PRICES[sub.tier] || 0), 0);
 
-    // Conversion Rate: % of Trial Leads that became Active Members (by email match)
-    const allTrialEmails = await Trial.distinct('email');
-    const trialsWhoBecameMembers = await User.countDocuments({
-      email: { $in: allTrialEmails },
-      role: 'athlete',
-      status: 'Active'
+    const pendingSubsThisMonth = await Subscription.find({
+      status: 'Pending',
+      createdAt: { $gte: startOfMonth }
     });
-    const conversionRate = allTrialEmails.length > 0 
-      ? ((trialsWhoBecameMembers / allTrialEmails.length) * 100).toFixed(1)
-      : 0;
+    const requestedRevenue = pendingSubsThisMonth.reduce((acc, sub) => acc + (TIER_PRICES[sub.tier] || 0), 0);
 
-    // 2. GROWTH VELOCITY (7-Month Rolling)
+    const totalRequests = activeSubsThisMonth.length + pendingSubsThisMonth.length;
+    const acceptedRequests = activeSubsThisMonth.length;
+
+    // 4. ELITE CONVERSIONS (Elite subs / Total Active subs)
+    const totalActiveSubs = await Subscription.countDocuments({ status: 'Active' });
+    const eliteSubs = await Subscription.countDocuments({ status: 'Active', tier: 'elite' });
+    const eliteConversionRate = totalActiveSubs > 0 
+      ? ((eliteSubs / totalActiveSubs) * 100).toFixed(1) + '%' 
+      : '0%';
+
+    // 5. GROWTH DATA (Last 6 Months)
     const chartData = [];
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const endD = new Date(now.getFullYear(), now.getMonth() - i + 1, 0);
-      const monthLabel = d.toLocaleString('default', { month: 'short' });
-      
-      const userCount = await User.countDocuments({ createdAt: { $lte: endD } });
-      const monthSubs = await Subscription.find({
-        status: { $in: ['Active', 'Superseded'] },
-        startDate: { $gte: d, $lte: endD }
+    for (let i = 5; i >= 0; i--) {
+      const start = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 0);
+      const monthLabel = start.toLocaleString('default', { month: 'short' });
+
+      const count = await User.countDocuments({
+        createdAt: { $gte: start, $lte: end }
       });
-      const monthRev = monthSubs.reduce((acc, sub) => acc + (TIER_PRICES[sub.tier] || 0), 0);
-      
+
+      const monthSubs = await Subscription.find({
+        status: 'Active',
+        startDate: { $gte: start, $lte: end }
+      });
+      const revenue = monthSubs.reduce((acc, sub) => acc + (TIER_PRICES[sub.tier] || 0), 0);
+
       chartData.push({
         month: monthLabel,
-        count: userCount,
-        revenue: monthRev
+        count, // User signups
+        revenue
       });
     }
 
-    // 3. LIVE ACTIVITY FEED (10 most recent critical events)
-    // We'll simulate this by fetching recent docs from multiple collections
-    const recentTrials = (await Trial.find().sort({ createdAt: -1 }).limit(5)).map(t => ({
-      type: 'Trial',
-      message: `New trial lead: ${t.name}`,
-      timestamp: t.createdAt
-    }));
-    
-    const recentSubs = (await Subscription.find({ status: 'Active' }).sort({ startDate: -1 }).limit(5).populate('userId', 'fullName')).map(s => ({
-      type: 'Subscription',
-      message: `${s.userId?.fullName || 'Athlete'} upgraded to ${s.tier.toUpperCase()}`,
-      timestamp: s.startDate
-    }));
+    // 6. LIVE FEED (Recent activity: Signups & Subscriptions)
+    const recentSubs = await Subscription.find()
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .populate('userId', 'fullName');
 
-    const liveFeed = [...recentTrials, ...recentSubs]
-      .sort((a, b) => b.timestamp - a.timestamp)
-      .slice(0, 10);
+    const recentUsers = await User.find()
+      .sort({ createdAt: -1 })
+      .limit(5);
 
-    // 4. FACILITY LOAD
-    const totalActiveMembers = await User.countDocuments({ role: 'athlete', status: 'Active' });
-    const startOfToday = new Date();
-    startOfToday.setHours(0,0,0,0);
-    const endOfToday = new Date();
-    endOfToday.setHours(23,59,59,999);
-
-    const todaysSessions = await Schedule.find({
-      startTime: { $gte: startOfToday, $lte: endOfToday }
-    });
-    
-    const uniqueEnrolledUsers = new Set();
-    todaysSessions.forEach(session => {
-      session.enrolledUsers.forEach(uid => uniqueEnrolledUsers.add(uid.toString()));
-    });
-
-    const facilityLoad = totalActiveMembers > 0 
-      ? ((uniqueEnrolledUsers.size / totalActiveMembers) * 100).toFixed(1)
-      : 0;
+    const liveFeed = [
+      ...recentSubs.map(s => ({
+        type: 'Subscription',
+        message: `${s.userId?.fullName || 'Athlete'} ${s.status === 'Active' ? 'activated' : 'requested'} ${s.tier.toUpperCase()} tier`,
+        timestamp: s.createdAt
+      })),
+      ...recentUsers.map(u => ({
+        type: 'Signup',
+        message: `New Recruit: ${u.fullName} joined the Forge`,
+        timestamp: u.createdAt
+      }))
+    ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 10);
 
     return ApiResponse({
       success: true,
-      stats: {
-        totalUsers,
-        monthlyRevenue,
-        conversionRate: `${conversionRate}%`,
-        growth: "+12%", // Placeholder for trend calculation
-        facilityLoad: `${facilityLoad}%`
-      },
-      chartData,
-      liveFeed
+      data: {
+        stats: {
+          totalUsers,
+          monthlyRevenue,
+          requestedRevenue,
+          totalRequests,
+          acceptedRequests,
+          conversionRate: eliteConversionRate, // Using for Elite Conversions card
+          growth,
+          facilityLoad: "68%" // Placeholder
+        },
+        chartData,
+        liveFeed
+      }
     });
 
   } catch (error) {

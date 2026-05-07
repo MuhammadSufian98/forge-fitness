@@ -48,7 +48,7 @@ export default function Home() {
       >
         <DesktopHeader />
         {activeSection === "Home" ? (
-          <HomeSection />
+          <HomeSection user={user} />
         ) : activeSection === "Plans" ? (
           <PlansSection />
         ) : activeSection === "Schedule" ? (

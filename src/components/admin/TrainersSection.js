@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect } from "react";
+import React, { useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus,
@@ -35,9 +35,13 @@ export default function TrainersSection() {
     offboardTrainer,
   } = useTrainersStore();
 
-  useEffect(() => {
+  const loadTrainers = useCallback(() => {
     fetchTrainers();
   }, [fetchTrainers]);
+
+  useEffect(() => {
+    loadTrainers();
+  }, [loadTrainers]);
 
   const handleNewTrainerChange = (event) => {
     const { name, value } = event.target;

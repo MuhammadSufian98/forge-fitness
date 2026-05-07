@@ -12,32 +12,32 @@ import {
   Trophy,
 } from "lucide-react";
 
-export default function HomeSection() {
+export default function HomeSection({ user }) {
   const stats = [
     {
       label: "Energy Burned",
-      value: "---",
+      value: user?.kcal || "0",
       unit: "kcal",
       icon: <Flame size={18} />,
       trend: "Tracking",
     },
     {
       label: "Active Time",
-      value: "---",
+      value: user?.activeMinutes || "0",
       unit: "min",
       icon: <Timer size={18} />,
       trend: "Live",
     },
     {
       label: "Heart Performance",
-      value: "---",
+      value: user?.heartRate || "---",
       unit: "bpm",
       icon: <Heart size={18} />,
       trend: "Ready",
     },
     {
       label: "Rest Quality",
-      value: "---",
+      value: user?.sleepScore || "---",
       unit: "/100",
       icon: <Moon size={18} />,
       trend: "Optimal",

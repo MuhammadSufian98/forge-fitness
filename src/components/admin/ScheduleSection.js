@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus,
@@ -59,16 +59,24 @@ export default function ScheduleSection() {
     isDaily: false
   });
 
-  useEffect(() => {
+  const initializeScheduleData = useCallback(() => {
     initializeDynamicDays();
     fetchTrainers();
   }, [initializeDynamicDays, fetchTrainers]);
 
-  useEffect(() => {
+  const loadSchedules = useCallback(() => {
     if (activeDate) {
       fetchSchedules(activeDate);
     }
   }, [activeDate, fetchSchedules]);
+
+  useEffect(() => {
+    initializeScheduleData();
+  }, [initializeScheduleData]);
+
+  useEffect(() => {
+    loadSchedules();
+  }, [loadSchedules]);
 
   const handleCreateSession = async (event) => {
     event.preventDefault();

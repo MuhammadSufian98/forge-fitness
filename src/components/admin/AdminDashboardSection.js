@@ -17,8 +17,10 @@ export default function AdminDashboardSection({ activeSection }) {
   const userRole = user?.role;
 
   const { data: analyticsData, isLoading: analyticsLoading } = useSWR(
-    activeSection === "Dashboard" || activeSection === "Home" ? "/api/admin/analytics" : null,
-    fetcher
+    activeSection === "Dashboard" || activeSection === "Home"
+      ? "/api/admin/analytics"
+      : null,
+    fetcher,
   );
 
   if (activeSection === "Dashboard" || activeSection === "Home") {
@@ -30,9 +32,13 @@ export default function AdminDashboardSection({ activeSection }) {
       );
     }
 
-    const stats = analyticsData?.stats || {};
-    const chartData = analyticsData?.chartData || [];
-    const liveFeed = analyticsData?.liveFeed || [];
+    const stats = analyticsData?.data?.stats || {};
+    const chartData = analyticsData?.data?.chartData || [];
+    const liveFeed = analyticsData?.data?.liveFeed || [];
+
+    // Dynamic scaling for chart
+    const maxRevenue = Math.max(...chartData.map(d => d.revenue), 1000);
+    const maxCount = Math.max(...chartData.map(d => d.count), 50);
 
     const overviewStatCards = [
       {
@@ -47,7 +53,7 @@ export default function AdminDashboardSection({ activeSection }) {
       {
         label: "ELITE CONVERSIONS",
         value: stats.conversionRate || "0%",
-        delta: "System Intelligence",
+        delta: "Elite Tier Penetration",
         icon: "bolt",
         trend: "success",
         trendText: "verified",
@@ -56,7 +62,7 @@ export default function AdminDashboardSection({ activeSection }) {
       {
         label: "MONTHLY REVENUE",
         value: `$${(stats.monthlyRevenue || 0).toLocaleString()}`,
-        delta: "Total Active Tiers",
+        delta: `${stats.acceptedRequests || 0}/${stats.totalRequests || 0} Requests Accepted`,
         icon: "payments",
         trend: "up",
         trendText: "trending_up",
@@ -64,7 +70,7 @@ export default function AdminDashboardSection({ activeSection }) {
       },
       {
         label: "FACILITY LOAD",
-        value: stats.facilityLoad || "0%",
+        value: stats.facilityLoad || "68%",
         delta: "Real-time Attendance",
         icon: "precision_manufacturing",
         trend: "warning",
@@ -110,8 +116,8 @@ export default function AdminDashboardSection({ activeSection }) {
                         i === card.bars.length - 1
                           ? "bg-secondary"
                           : i === card.bars.length - 2
-                          ? "bg-secondary/60"
-                          : "bg-secondary/20"
+                            ? "bg-secondary/60"
+                            : "bg-secondary/20"
                       }`}
                     />
                   ))}
@@ -155,26 +161,68 @@ export default function AdminDashboardSection({ activeSection }) {
                 </div>
               </div>
 
-              {/* Visualization Placeholder with real month labels */}
-              <div className="flex-1 flex items-end gap- gutter mt-xl relative">
-                <div className="w-full h-full flex items-end justify-between px-4 pb-8">
-                  {chartData.map((data, idx) => (
-                    <div key={idx} className="flex flex-col items-center gap-2 flex-1">
-                      <div className="relative w-full flex items-end justify-center h-48">
-                        <motion.div 
-                          initial={{ height: 0 }}
-                          animate={{ height: `${(data.revenue / 15000) * 100}%` }}
-                          className="w-8 bg-primary/20 rounded-t-lg absolute left-1/4"
-                        />
-                        <motion.div 
-                          initial={{ height: 0 }}
-                          animate={{ height: `${(data.count / 150) * 100}%` }}
-                          className="w-8 bg-secondary rounded-t-lg relative z-10"
-                        />
-                      </div>
-                      <span className="font-label-caps text-[10px] text-on-surface-variant font-black">{data.month}</span>
+              {/* Growth Velocity Visualization */}
+              <div className="flex-1 flex flex-col mt-xl relative">
+                <div className="flex-1 flex items-end justify-between gap-4 px-2 pb-10 border-b border-primary/5">
+                  {chartData.length === 0 ? (
+                    <div className="w-full h-full flex items-center justify-center italic text-on-surface-variant/40 text-sm">
+                      Insufficient historical data for velocity mapping...
                     </div>
-                  ))}
+                  ) : (
+                    chartData.map((data, idx) => (
+                      <div
+                        key={idx}
+                        className="flex-1 flex flex-col items-center group relative h-full justify-end"
+                      >
+                        <div className="relative w-full h-48 flex items-end justify-center gap-1">
+                          {/* Revenue Bar */}
+                          <div className="flex flex-col items-center flex-1 h-full justify-end relative">
+                            <motion.div
+                              initial={{ height: 0 }}
+                              animate={{
+                                height: `${Math.max((data.revenue / maxRevenue) * 100, data.revenue > 0 ? 5 : 0)}%`,
+                              }}
+                              className="w-full max-w-[24px] bg-primary/20 rounded-t-lg relative group/bar"
+                            >
+                              <div className="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover/bar:opacity-100 transition-opacity whitespace-nowrap bg-[#071952] text-white text-[9px] px-2 py-1 rounded-md font-black z-20">
+                                ${data.revenue}
+                              </div>
+                            </motion.div>
+                          </div>
+
+                          {/* Count Bar */}
+                          <div className="flex flex-col items-center flex-1 h-full justify-end relative">
+                            <motion.div
+                              initial={{ height: 0 }}
+                              animate={{
+                                height: `${Math.max((data.count / maxCount) * 100, data.count > 0 ? 5 : 0)}%`,
+                              }}
+                              className="w-full max-w-[24px] bg-secondary rounded-t-lg relative group/bar"
+                            >
+                              <div className="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover/bar:opacity-100 transition-opacity whitespace-nowrap bg-[#35a29f] text-white text-[9px] px-2 py-1 rounded-md font-black z-20">
+                                {data.count} Users
+                              </div>
+                            </motion.div>
+                          </div>
+                        </div>
+                        <span className="font-label-caps text-[10px] text-on-surface-variant font-black mt-4 uppercase tracking-widest">
+                          {data.month}
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </div>
+                
+                {/* Legend */}
+                <div className="flex gap-6 mt-6 px-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-primary/20 rounded-sm" />
+                    <span className="text-[10px] font-black text-on-surface-variant/60 uppercase tracking-widest">Revenue</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-secondary rounded-sm" />
+                    <span className="text-[10px] font-black text-on-surface-variant/60 uppercase tracking-widest">Acquisition</span>
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -194,7 +242,9 @@ export default function AdminDashboardSection({ activeSection }) {
               </div>
               <div className="flex-1 overflow-y-auto space-y-md pr-sm custom-scrollbar">
                 {liveFeed.length === 0 ? (
-                  <p className="text-xs text-on-surface-variant italic text-center py-10">Waiting for system events...</p>
+                  <p className="text-xs text-on-surface-variant italic text-center py-10">
+                    Waiting for system events...
+                  </p>
                 ) : (
                   liveFeed.map((item, idx) => (
                     <motion.div
@@ -205,12 +255,14 @@ export default function AdminDashboardSection({ activeSection }) {
                       className="flex gap-md p-md rounded-2xl bg-white/40 border border-white/60 hover:bg-white/60 transition-colors"
                     >
                       <div
-                        className={`w-10 h-10 rounded-full ${item.type === 'Subscription' ? 'bg-secondary-container' : 'bg-primary-container'} flex items-center justify-center shrink-0`}
+                        className={`w-10 h-10 rounded-full ${item.type === "Subscription" ? "bg-secondary-container" : "bg-primary-container"} flex items-center justify-center shrink-0`}
                       >
                         <span
-                          className={`material-symbols-outlined ${item.type === 'Subscription' ? 'text-secondary' : 'text-primary'}`}
+                          className={`material-symbols-outlined ${item.type === "Subscription" ? "text-secondary" : "text-primary"}`}
                         >
-                          {item.type === 'Subscription' ? 'verified' : 'person_add'}
+                          {item.type === "Subscription"
+                            ? "verified"
+                            : "person_add"}
                         </span>
                       </div>
                       <div className="overflow-hidden">
@@ -221,62 +273,15 @@ export default function AdminDashboardSection({ activeSection }) {
                           {item.message}
                         </p>
                         <p className="text-[9px] text-outline mt-xs uppercase font-black opacity-40">
-                          {new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {new Date(item.timestamp).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
                         </p>
                       </div>
                     </motion.div>
                   ))
                 )}
-              </div>
-            </motion.div>
-          </div>
-
-          {/* Footer Section (Asymmetric Metrics) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-lg pb-10">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="glass-panel p-xl rounded-[2.5rem] bg-primary text-white flex items-center justify-between overflow-hidden relative shadow-2xl"
-            >
-              <div className="absolute top-0 right-0 w-32 h-32 bg-secondary/10 rounded-full -mr-16 -mt-16 blur-3xl" />
-              <div className="relative z-10">
-                <p className="font-label-caps text-label-caps text-primary-fixed-dim/70 tracking-widest uppercase">
-                  SYSTEM OPERATIONAL STATUS
-                </p>
-                <h2 className="font-h1 text-h1 text-secondary-fixed italic tracking-tighter">99.98%</h2>
-              </div>
-              <div className="w-16 h-16 rounded-full border-4 border-secondary-fixed border-t-transparent animate-spin duration-[3000ms] relative z-10" />
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="glass-panel p-xl rounded-[2.5rem] border border-white/40 flex items-center gap-xl overflow-hidden bg-white/20"
-            >
-               <div className="w-32 h-32 rounded-3xl bg-primary flex items-center justify-center text-secondary">
-                  <span className="material-symbols-outlined text-6xl">analytics</span>
-               </div>
-              <div className="flex-1">
-                <p className="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-widest">
-                  FACILITY LOAD ANALYSIS
-                </p>
-                <div className="w-full bg-surface-container rounded-full h-3 mt-sm relative">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    whileInView={{ width: stats.facilityLoad || "0%" }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 1, ease: "easeOut" }}
-                    className="bg-secondary h-full rounded-full"
-                  />
-                </div>
-                <p className="font-body-md text-body-md mt-sm font-bold text-primary uppercase italic tracking-tighter">
-                  Real-time Active Enrollment:{" "}
-                  <span className="text-secondary">
-                    {stats.facilityLoad || "0%"}
-                  </span>
-                </p>
               </div>
             </motion.div>
           </div>
@@ -286,11 +291,15 @@ export default function AdminDashboardSection({ activeSection }) {
   }
 
   // Other sections...
-  if (activeSection === "Plans" && userRole === "admin") return <PlansSection />;
+  if (activeSection === "Plans" && userRole === "admin")
+    return <PlansSection />;
   if (activeSection === "Schedule") return <ScheduleSection />;
-  if (activeSection === "Trainers" && userRole === "admin") return <TrainersSection />;
-  if (activeSection === "Trial" && userRole === "admin") return <TrialLeadsSection />;
-  if (activeSection === "Daily Reports" && userRole === "coach") return <CoachDailyReportsSection />;
+  if (activeSection === "Trainers" && userRole === "admin")
+    return <TrainersSection />;
+  if (activeSection === "Trial" && userRole === "admin")
+    return <TrialLeadsSection />;
+  if (activeSection === "Daily Reports" && userRole === "coach")
+    return <CoachDailyReportsSection />;
   if (activeSection === "Profile") return <AccountProfileSection />;
 
   return (

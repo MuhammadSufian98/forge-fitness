@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
@@ -32,9 +32,13 @@ export default function SubscriptionMatrix() {
 
   const [searchQuery, setSearchQuery] = useState("");
 
-  useEffect(() => {
+  const loadAthletes = useCallback(() => {
     fetchAthletes();
   }, [fetchAthletes]);
+
+  useEffect(() => {
+    loadAthletes();
+  }, [loadAthletes]);
 
   const handleEdit = (athlete) => {
     setSelectedAthlete({ ...athlete });

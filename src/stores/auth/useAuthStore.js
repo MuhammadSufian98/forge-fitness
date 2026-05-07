@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { authApi } from "@/utils/authApi";
+import { isRequestCanceled } from "@/utils/axiosInstance";
 
 const initialLogin = {
   email: "",
@@ -50,6 +51,11 @@ const useAuthStore = create((set, get) => ({
         return { success: false };
       }
     } catch (err) {
+      if (isRequestCanceled(err)) {
+        set({ isVerifying: false });
+        return { success: false, cancelled: true };
+      }
+
       set({ user: null, isAuthenticated: false, isVerifying: false });
       return { success: false };
     }
@@ -67,6 +73,11 @@ const useAuthStore = create((set, get) => ({
         return { success: false, message: data.message };
       }
     } catch (err) {
+      if (isRequestCanceled(err)) {
+        set({ isLoading: false });
+        return { success: false, cancelled: true };
+      }
+
       const msg = err.response?.data?.message || err.message || "Login failed";
       set({ isLoading: false, error: msg });
       return { success: false, message: msg };
@@ -85,6 +96,11 @@ const useAuthStore = create((set, get) => ({
         return { success: false, message: data.message };
       }
     } catch (err) {
+      if (isRequestCanceled(err)) {
+        set({ isLoading: false });
+        return { success: false, cancelled: true };
+      }
+
       const msg = err.response?.data?.message || err.message || "Signup failed";
       set({ isLoading: false, error: msg });
       return { success: false, message: msg };
@@ -104,6 +120,11 @@ const useAuthStore = create((set, get) => ({
         return { success: false, message: data.message };
       }
     } catch (err) {
+      if (isRequestCanceled(err)) {
+        set({ isLoading: false });
+        return { success: false, cancelled: true };
+      }
+
       const msg = err.response?.data?.message || err.message || "Update failed";
       set({ isLoading: false, error: msg });
       return { success: false, message: msg };
@@ -116,6 +137,11 @@ const useAuthStore = create((set, get) => ({
       set({ user: null, isAuthenticated: false, isLoading: false });
       window.location.href = "/auth/login";
     } catch (err) {
+      if (isRequestCanceled(err)) {
+        set({ isLoading: false });
+        return;
+      }
+
       console.error("Logout failed", err);
     }
   },

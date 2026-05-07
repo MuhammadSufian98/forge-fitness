@@ -2,8 +2,11 @@
 
 import { motion } from "framer-motion";
 import useHomeShellStore from "@/stores/home/useHomeShellStore";
+import useAuthStore from "@/stores/auth/useAuthStore";
+import { LogOut } from "lucide-react";
 
 export default function Sidebar() {
+  const { user, logout } = useAuthStore();
   const activeSection = useHomeShellStore((state) => state.activeSection);
   const setActiveSection = useHomeShellStore((state) => state.setActiveSection);
   const isShrunk = useHomeShellStore((state) => state.isSidebarShrunk);
@@ -114,32 +117,47 @@ export default function Sidebar() {
         })}
       </div>
 
-      <div
-        onClick={() => setActiveSection("Profile")}
-        className={`mt-auto pt-6 border-t border-primary/5 flex items-center cursor-pointer hover:bg-primary/5 transition-colors rounded-2xl p-2 ${isShrunk ? "justify-center" : "gap-3"}`}
-      >
-        <div className="relative shrink-0">
-          <img
-            className="w-10 h-10 rounded-full object-cover ring-2 ring-primary/10"
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuDsh2Ltg36aujsb2e2OaTW7Z5uu-pdmf2z7ZfyAzNcTd2pRaS7XDVYqhlLmjqMDaTu7c9mpIbkPtH29wCUZ7we3E_sWhIRTuWeGhTR-2pTm5J9xy7fOA7IlGx_KTIpzkMwlONPY3NhfYdxIt1FnhF8yMyhF0vyo05e9znHXs-TzCPVwYw-bIFwWIpmrakbDI9c4GUMoOk5Z3Vqs3_FtzuL-M1NKca6-tXNo_p6txG0FgF8_u6zYyconfJPFRfppDbdIidMSztiUv00"
-            alt="Sufian Hassan"
-          />
-          <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-surface rounded-full"></div>
+      <div className={`mt-auto pt-6 border-t border-primary/5 flex items-center p-2 ${isShrunk ? "flex-col gap-4" : "justify-between"}`}>
+        <div 
+          onClick={() => setActiveSection("Profile")}
+          className={`flex items-center cursor-pointer hover:bg-primary/5 transition-colors rounded-2xl p-2 flex-1 ${isShrunk ? "justify-center" : "gap-3"}`}
+        >
+          <div className="relative shrink-0">
+            <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white text-xs font-black italic shadow-lg overflow-hidden ring-2 ring-primary/10">
+              {user?.profileImage ? (
+                <img src={user.profileImage} alt={user.fullName} className="w-full h-full object-cover" />
+              ) : (
+                user?.fullName?.split(" ").map(n => n[0]).join("").toUpperCase().substring(0, 2) || "??"
+              )}
+            </div>
+            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-surface rounded-full"></div>
+          </div>
+          {!isShrunk && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex flex-col overflow-hidden"
+            >
+              <span className="font-bold text-[13px] text-primary whitespace-nowrap truncate max-w-[120px]">
+                {user?.fullName || "Athlete"}
+              </span>
+              <span className="text-[11px] text-on-surface-variant/70 font-medium whitespace-nowrap uppercase tracking-tighter">
+                {user?.subscriptionTier || "Basic"} Member
+              </span>
+            </motion.div>
+          )}
         </div>
-        {!isShrunk && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex flex-col"
-          >
-            <span className="font-bold text-[13px] text-primary whitespace-nowrap">
-              Sufian Hassan
-            </span>
-            <span className="text-[11px] text-on-surface-variant/70 font-medium whitespace-nowrap">
-              Pro Member
-            </span>
-          </motion.div>
-        )}
+        
+        <button 
+          onClick={(e) => {
+            e.stopPropagation();
+            logout();
+          }}
+          className={`p-2.5 text-on-surface-variant/40 hover:text-red-500 hover:bg-red-50 transition-all rounded-xl ${isShrunk ? "" : "ml-2"}`}
+          title="Sign Out"
+        >
+          <LogOut size={18} />
+        </button>
       </div>
     </motion.nav>
   );
