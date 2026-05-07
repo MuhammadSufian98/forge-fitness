@@ -1,4 +1,5 @@
 import "./globals.css";
+import AuthInitializer from "@/components/auth/AuthInitializer";
 
 export const metadata = {
   title: "Forge Fitness - AI Coach",
@@ -19,7 +20,9 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body className="min-h-screen bg-mesh text-on-surface font-inter">
-        {children}
+        <AuthInitializer>
+          {children}
+        </AuthInitializer>
       </body>
     </html>
   );

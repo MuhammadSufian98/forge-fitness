@@ -1,0 +1,70 @@
+import { ApiResponse } from '@/lib/response';
+import connectDB from '@/lib/mongodb';
+import Trial from '@/models/Trial';
+import { z } from 'zod';
+import { rateLimit } from '@/lib/rate-limit';
+
+const trialSchema = z.object({
+  name: z.string().min(1),
+  email: z.string().email(),
+  goal: z.string().min(1),
+  coordinates: z.object({
+    lat: z.number(),
+    lng: z.number(),
+  }).optional(),
+});
+
+export async function POST(req) {
+  try {
+    const ip = req.headers.get('x-forwarded-for') || '127.0.0.1';
+    const limiter = rateLimit(ip, 1, 3600000); // 1 request per hour
+
+    if (limiter.isLimited) {
+      return ApiResponse({ 
+        success: false, 
+        message: `Rate limit exceeded. Try again in ${Math.ceil(limiter.resetIn / 60000)} minutes.`, 
+        status: 429 
+      });
+    }
+
+    await connectDB();
+    const body = await req.json();
+    
+    // UI might send fullName, map it to name
+    if (body.fullName && !body.name) body.name = body.fullName;
+    // Normalize legacy payloads that still send phone instead of email.
+    if (!body.email && body.phone) body.email = body.phone;
+
+    const validation = trialSchema.safeParse(body);
+
+    if (!validation.success) {
+      return ApiResponse({ 
+        success: false, 
+        message: 'Validation failed', 
+        data: validation.error.format(), 
+        status: 400 
+      });
+    }
+
+    const { name, email, goal, coordinates } = validation.data;
+
+    // Check if the email already has an active trial
+    const existingTrial = await Trial.findOne({ email, status: 'New' });
+    if (existingTrial) {
+      return ApiResponse({ success: false, message: 'You already have an active trial application', status: 400 });
+    }
+
+    const newTrial = await Trial.create({
+      name,
+      email: email?.toLowerCase(),
+      goal,
+      coordinates: coordinates || { lat: 0, lng: 0 },
+      status: 'New'
+    });
+
+    return ApiResponse({ success: true, data: newTrial, status: 201 });
+  } catch (error) {
+    console.error('Trial Apply Error:', error);
+    return ApiResponse({ success: false, message: 'Internal Server Error', status: 500 });
+  }
+}

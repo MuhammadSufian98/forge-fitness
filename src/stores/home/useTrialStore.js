@@ -1,13 +1,16 @@
 import { create } from "zustand";
+import { trialApi } from "@/utils/authApi";
 
 const initialTrialForm = {
   fullName: "",
-  phone: "",
+  email: "",
   goal: "",
 };
 
-const useTrialStore = create((set) => ({
+const useTrialStore = create((set, get) => ({
   isSubmitted: false,
+  isLoading: false,
+  error: null,
   form: initialTrialForm,
   setTrialField: (field, value) =>
     set((state) => ({
@@ -16,8 +19,20 @@ const useTrialStore = create((set) => ({
         [field]: value,
       },
     })),
-  submitTrial: () => set({ isSubmitted: true }),
-  resetTrial: () => set({ isSubmitted: false, form: initialTrialForm }),
+  submitTrial: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const data = await trialApi.apply(get().form);
+      if (data.success) {
+        set({ isSubmitted: true, isLoading: false });
+      } else {
+        set({ error: data.message, isLoading: false });
+      }
+    } catch (err) {
+      set({ error: "Failed to submit trial application", isLoading: false });
+    }
+  },
+  resetTrial: () => set({ isSubmitted: false, form: initialTrialForm, error: null }),
 }));
 
 export default useTrialStore;

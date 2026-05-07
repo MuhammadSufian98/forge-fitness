@@ -13,8 +13,14 @@ export default function SignupPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await signupSubmit();
+    const result = await signupSubmit();
+    if (result.success) {
+      alert("Account created! Please login.");
+      window.location.href = "/auth/login";
+    }
   };
+
+  return (
     <div className="bg-surface-container-low font-body-md text-on-surface min-h-screen selection:bg-secondary-container antialiased">
       <main className="min-h-screen flex">
         {/* Left Column: Hero Brand Image */}

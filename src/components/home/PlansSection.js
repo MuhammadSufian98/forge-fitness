@@ -1,7 +1,10 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import usePlansStore from "@/stores/home/usePlansStore";
+import useSWR, { mutate } from "swr";
+import { fetcher } from "@/utils/userAuth";
+import { subscriptionsApi } from "@/utils/authApi";
 import {
   Check,
   X,
@@ -10,12 +13,18 @@ import {
   ShieldCheck,
   ArrowRight,
   XCircle,
+  Loader2,
+  Clock,
 } from "lucide-react";
 
 export default function PlansSection() {
   const selectedPlan = usePlansStore((state) => state.selectedPlan);
   const openPlan = usePlansStore((state) => state.openPlan);
   const closePlan = usePlansStore((state) => state.closePlan);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { data: subData, error: subError, isLoading: subLoading } = useSWR("/api/subscriptions/current", fetcher);
+  const currentSub = subData?.data;
 
   const plans = [
     {
@@ -69,6 +78,28 @@ export default function PlansSection() {
     },
   ];
 
+  const handleConfirmTier = async (planId) => {
+    setIsSubmitting(true);
+    try {
+      const response = await subscriptionsApi.apply({
+        planId,
+        paymentMethod: "Manual/In-Gym", // Default for now
+        billingCycle: "Monthly"
+      });
+      if (response.success) {
+        mutate("/api/subscriptions/current");
+        closePlan();
+      } else {
+        alert(response.message || "Failed to apply for plan");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("An error occurred. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="flex-1 bg-[#f2f3f6] overflow-hidden flex flex-col h-full relative">
       <div className="flex-1 overflow-y-auto px-6 py-12 scroll-smooth custom-scrollbar pb-32">
@@ -76,63 +107,89 @@ export default function PlansSection() {
           <motion.header
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-12"
+            className="mb-12 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6"
           >
-            <h2 className="text-4xl lg:text-5xl font-black text-[#071952] uppercase italic tracking-tighter">
-              Training <span className="text-[#088395]">Tiers</span>
-            </h2>
-            <p className="text-[#071952]/60 font-medium mt-2">
-              Select the path that matches your ambition.
-            </p>
+            <div>
+              <h2 className="text-4xl lg:text-5xl font-black text-[#071952] uppercase italic tracking-tighter">
+                Training <span className="text-[#088395]">Tiers</span>
+              </h2>
+              <p className="text-[#071952]/60 font-medium mt-2">
+                Select the path that matches your ambition.
+              </p>
+            </div>
+
+            {currentSub && (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="bg-white border-2 border-[#088395] rounded-2xl px-6 py-4 flex items-center gap-4 shadow-sm"
+              >
+                <div className="bg-[#088395]/10 p-2 rounded-xl text-[#088395]">
+                  {currentSub.status === 'Pending' ? <Clock size={24} /> : <ShieldCheck size={24} />}
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-[#088395] uppercase tracking-widest">Current Status</p>
+                  <h4 className="text-lg font-black text-[#071952] uppercase italic">
+                    {currentSub.tier} <span className="text-sm not-italic font-bold text-[#071952]/40">— {currentSub.status}</span>
+                  </h4>
+                </div>
+              </motion.div>
+            )}
           </motion.header>
 
           {/* Grid Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {plans.map((plan) => (
-              <motion.div
-                key={plan.id}
-                layoutId={`card-${plan.id}`}
-                onClick={() => openPlan(plan)}
-                whileHover={{ y: -10, transition: { duration: 0.2 } }}
-                className="bg-white rounded-[2.5rem] p-8 border border-[#071952]/5 shadow-sm cursor-pointer relative overflow-hidden group flex flex-col"
-              >
-                {plan.badge && (
-                  <div className="absolute top-6 right-6 bg-[#088395] px-3 py-1 rounded-full text-[9px] font-black text-white tracking-widest uppercase">
-                    {plan.badge}
-                  </div>
-                )}
+            {plans.map((plan) => {
+              const isActive = currentSub?.tier === plan.id && currentSub?.status === 'Active';
+              const isPending = currentSub?.tier === plan.id && currentSub?.status === 'Pending';
 
-                <div
-                  className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-6 transition-colors ${plan.id === "pro" ? "bg-[#088395] text-white" : "bg-[#f2f3f6] text-[#071952]"}`}
+              return (
+                <motion.div
+                  key={plan.id}
+                  layoutId={`card-${plan.id}`}
+                  onClick={() => openPlan(plan)}
+                  whileHover={{ y: -10, transition: { duration: 0.2 } }}
+                  className={`bg-white rounded-[2.5rem] p-8 border ${isActive ? 'border-[#088395] border-2 shadow-lg shadow-[#088395]/10' : 'border-[#071952]/5'} shadow-sm cursor-pointer relative overflow-hidden group flex flex-col`}
                 >
-                  {plan.icon}
-                </div>
+                  {plan.badge && (
+                    <div className="absolute top-6 right-6 bg-[#088395] px-3 py-1 rounded-full text-[9px] font-black text-white tracking-widest uppercase">
+                      {plan.badge}
+                    </div>
+                  )}
 
-                <h3 className="text-2xl font-black text-[#071952] uppercase italic">
-                  {plan.title}
-                </h3>
-                <p className="text-[10px] font-bold text-[#088395] uppercase tracking-[0.2em] mb-4">
-                  {plan.tagline}
-                </p>
-                <p className="text-sm text-[#071952]/60 mb-8 line-clamp-2">
-                  {plan.desc}
-                </p>
+                  <div
+                    className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-6 transition-colors ${plan.id === "pro" ? "bg-[#088395] text-white" : "bg-[#f2f3f6] text-[#071952]"}`}
+                  >
+                    {plan.icon}
+                  </div>
 
-                <div className="mt-auto flex items-end justify-between">
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-black text-[#071952] tracking-tighter">
-                      ${plan.price}
-                    </span>
-                    <span className="text-xs font-bold text-[#071952]/30">
-                      /mo
-                    </span>
+                  <h3 className="text-2xl font-black text-[#071952] uppercase italic flex items-center gap-2">
+                    {plan.title}
+                    {isActive && <div className="w-2 h-2 bg-[#088395] rounded-full animate-pulse" />}
+                  </h3>
+                  <p className="text-[10px] font-bold text-[#088395] uppercase tracking-[0.2em] mb-4">
+                    {plan.tagline}
+                  </p>
+                  <p className="text-sm text-[#071952]/60 mb-8 line-clamp-2">
+                    {plan.desc}
+                  </p>
+
+                  <div className="mt-auto flex items-end justify-between">
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-3xl font-black text-[#071952] tracking-tighter">
+                        ${plan.price}
+                      </span>
+                      <span className="text-xs font-bold text-[#071952]/30">
+                        /mo
+                      </span>
+                    </div>
+                    <div className={`p-3 rounded-xl transition-colors ${isActive ? 'bg-[#088395] text-white' : 'bg-[#071952] text-white group-hover:bg-[#088395]'}`}>
+                      <ArrowRight size={18} />
+                    </div>
                   </div>
-                  <div className="p-3 bg-[#071952] text-white rounded-xl group-hover:bg-[#088395] transition-colors">
-                    <ArrowRight size={18} />
-                  </div>
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -145,13 +202,13 @@ export default function PlansSection() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setSelectedPlan(null)}
+              onClick={closePlan}
               className="absolute inset-0 bg-[#071952]/40 backdrop-blur-md"
             />
 
             <motion.div
               layoutId={`card-${selectedPlan.id}`}
-              className="relative w-full max-w-4xl bg-white rounded-[3rem] shadow-2xl overflow-hidden flex flex-col lg:flex-row"
+              className="relative w-full max-w-4xl bg-white rounded-[3rem] shadow-2xl overflow-hidden flex flex-col lg:flex-row h-full max-h-[85vh] lg:h-auto"
             >
               {/* Left Side: Brand & Price */}
               <div
@@ -183,9 +240,29 @@ export default function PlansSection() {
                       per month
                     </span>
                   </div>
-                  <button className="w-full py-5 bg-[#35a29f] hover:bg-white hover:text-[#071952] text-white rounded-2xl font-black uppercase tracking-widest transition-all shadow-xl shadow-black/20">
-                    Confirm Tier
-                  </button>
+                  
+                  {currentSub?.tier === selectedPlan.id ? (
+                    <div className="w-full py-5 bg-white/10 border-2 border-white/20 text-white rounded-2xl font-black uppercase tracking-widest text-center">
+                      {currentSub.status === 'Pending' ? 'Verification Pending' : 'Current Active Plan'}
+                    </div>
+                  ) : (
+                    <button 
+                      disabled={isSubmitting || currentSub?.status === 'Pending'}
+                      onClick={() => handleConfirmTier(selectedPlan.id)}
+                      className="w-full py-5 bg-[#35a29f] hover:bg-white hover:text-[#071952] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-2xl font-black uppercase tracking-widest transition-all shadow-xl shadow-black/20 flex items-center justify-center gap-3"
+                    >
+                      {isSubmitting ? (
+                        <Loader2 className="animate-spin" size={20} />
+                      ) : (
+                        "Confirm Tier"
+                      )}
+                    </button>
+                  )}
+                  {currentSub?.status === 'Pending' && currentSub?.tier !== selectedPlan.id && (
+                    <p className="text-[10px] text-center mt-3 font-bold text-white/40 uppercase tracking-tighter">
+                      Existing pending request found. Please wait for approval.
+                    </p>
+                  )}
                 </div>
               </div>
 

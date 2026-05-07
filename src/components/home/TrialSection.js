@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import useTrialStore from "@/stores/home/useTrialStore";
 import {
   User,
-  Phone,
+  Mail,
   Target,
   ArrowRight,
   CheckCircle2,
@@ -115,19 +115,21 @@ export default function TrialSection() {
 
                     <div className="space-y-2">
                       <label className="text-[10px] font-black text-[#071952]/40 uppercase tracking-widest ml-2">
-                        Phone Number
+                        Email Address
                       </label>
                       <div className="relative">
-                        <Phone
+                        <Mail
                           size={18}
                           className="absolute left-5 top-1/2 -translate-y-1/2 text-[#088395]"
                         />
                         <input
                           required
-                          type="tel"
-                          value={form.phone}
-                          onChange={(e) => setTrialField("phone", e.target.value)}
-                          placeholder="+92 300 0000000"
+                          type="email"
+                          value={form.email}
+                          onChange={(e) =>
+                            setTrialField("email", e.target.value)
+                          }
+                          placeholder="sufian@example.com"
                           className="w-full bg-[#f2f3f6] border-none rounded-2xl py-5 pl-14 pr-6 text-[#071952] font-bold focus:ring-2 focus:ring-[#35a29f] outline-none transition-all"
                         />
                       </div>
@@ -145,7 +147,9 @@ export default function TrialSection() {
                         <select
                           required
                           value={form.goal}
-                          onChange={(e) => setTrialField("goal", e.target.value)}
+                          onChange={(e) =>
+                            setTrialField("goal", e.target.value)
+                          }
                           className="w-full bg-[#f2f3f6] border-none rounded-2xl py-5 pl-14 pr-10 text-[#071952] font-bold focus:ring-2 focus:ring-[#35a29f] outline-none appearance-none cursor-pointer"
                         >
                           <option value="">Select a goal</option>
@@ -172,42 +176,49 @@ export default function TrialSection() {
                 </div>
               </motion.div>
             ) : (
-              /* Success State: Crucial for Demo Walkthrough */
               <motion.div
                 key="success"
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="flex flex-col items-center justify-center text-center py-20 space-y-8"
+                className="flex flex-col items-center justify-center text-center py-12 lg:py-20 space-y-10"
               >
+                {/* Icon Branding */}
                 <div className="relative">
                   <div className="absolute inset-0 bg-[#35a29f]/20 blur-3xl rounded-full scale-150 animate-pulse" />
                   <motion.div
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    transition={{ type: "spring", stiffness: 200, damping: 10 }}
-                    className="w-32 h-32 bg-[#35a29f] rounded-full flex items-center justify-center text-white relative z-10 shadow-2xl"
+                    transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                    className="w-24 h-24 lg:w-32 lg:h-32 bg-[#35a29f] rounded-full flex items-center justify-center text-white relative z-10 shadow-2xl"
                   >
-                    <CheckCircle2 size={64} strokeWidth={2.5} />
+                    <CheckCircle2 size={56} strokeWidth={2.5} />
                   </motion.div>
                 </div>
 
-                <div className="space-y-4 max-w-lg">
-                  <h2 className="text-5xl font-black text-[#071952] uppercase italic">
-                    You're Ready.
+                {/* Text Content - Fixed Widths */}
+                <div className="space-y-6 w-full max-w-2xl px-4">
+                  <h2 className="text-5xl lg:text-7xl font-black text-[#071952] uppercase italic tracking-tighter leading-none">
+                    You're <span className="text-[#088395]">Ready.</span>
                   </h2>
-                  <p className="text-[#071952]/60 font-medium text-lg leading-relaxed">
-                    Welcome to the elite, Sufian. A specialist will call you
-                    within{" "}
-                    <span className="text-[#088395] font-bold">15 minutes</span>{" "}
+
+                  {/* increased max-width from lg to 2xl and leading to relaxed */}
+                  <p className="text-[#071952]/60 font-medium text-lg lg:text-xl leading-relaxed">
+                    Welcome to the elite circle, Sufian.{" "}
+                    <br className="hidden md:block" />A performance specialist
+                    will call you within{" "}
+                    <span className="text-[#088395] font-bold whitespace-nowrap">
+                      15 minutes
+                    </span>{" "}
                     to finalize your access.
                   </p>
                 </div>
 
+                {/* Primary Action */}
                 <button
                   onClick={resetTrial}
-                  className="px-10 py-4 bg-[#f2f3f6] text-[#071952] rounded-2xl font-black uppercase text-[10px] tracking-widest border border-[#071952]/5 hover:bg-[#071952] hover:text-white transition-all"
+                  className="px-12 py-5 bg-[#071952] text-white rounded-2xl font-black uppercase text-xs tracking-[0.2em] shadow-xl shadow-[#071952]/20 hover:bg-[#088395] active:scale-95 transition-all"
                 >
-                  Done
+                  Return to Terminal
                 </button>
               </motion.div>
             )}

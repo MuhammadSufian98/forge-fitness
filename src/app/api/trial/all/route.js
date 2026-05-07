@@ -1,0 +1,22 @@
+import { ApiResponse } from '@/lib/response';
+import { getAuthUser } from '@/lib/auth';
+import connectDB from '@/lib/mongodb';
+import Trial from '@/models/Trial';
+
+export async function GET() {
+  try {
+    await connectDB();
+    const user = await getAuthUser();
+
+    if (!user || user.role !== 'admin') {
+      return ApiResponse({ success: false, message: 'Forbidden: Admin access only', status: 403 });
+    }
+
+    const leads = await Trial.find({}).sort({ createdAt: -1 }).populate('repliedBy', 'fullName').lean();
+
+    return ApiResponse({ success: true, data: leads });
+  } catch (error) {
+    console.error('Trial All GET Error:', error);
+    return ApiResponse({ success: false, message: 'Internal Server Error', status: 500 });
+  }
+}

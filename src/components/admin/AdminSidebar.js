@@ -1,15 +1,37 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
+import { LogIn, User } from "lucide-react";
+import useAuthStore from "@/stores/auth/useAuthStore";
 
-export default function AdminSidebar({ activeSection, setActiveSection, isShrunk }) {
-  const menuItems = [
-    { icon: "dashboard", label: "Dashboard" },
-    { icon: "group", label: "Users" },
-    { icon: "analytics", label: "Reports" },
-    { icon: "event", label: "Schedule" },
-    { icon: "settings", label: "Settings" },
+export default function AdminSidebar({
+  activeSection,
+  setActiveSection,
+  isShrunk,
+}) {
+  const router = useRouter();
+  const { user, isAuthenticated } = useAuthStore();
+  const userRole = user?.role;
+
+  // Role-based menu items
+  const adminMenuItems = [
+    { icon: "home", label: "Home" },
+    { icon: "fitness_center", label: "Plans" },
+    { icon: "calendar_month", label: "Schedule" },
+    { icon: "person", label: "Trainers" },
+    { icon: "workspace_premium", label: "Trial" },
   ];
+
+  const coachMenuItems = [
+    { icon: "home", label: "Home" },
+    { icon: "calendar_month", label: "Schedule" },
+    { icon: "assessment", label: "Daily Reports" },
+  ];
+
+  const menuItems = userRole === "coach" ? coachMenuItems : adminMenuItems;
+
+  const initials = user?.fullName?.split(" ").map(n => n[0]).join("").toUpperCase().substring(0, 2) || "??";
 
   return (
     <motion.nav
@@ -20,32 +42,45 @@ export default function AdminSidebar({ activeSection, setActiveSection, isShrunk
         paddingRight: isShrunk ? 16 : 24,
       }}
       transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-      className="fixed left-0 top-0 h-screen hidden lg:flex flex-col bg-surface/80 backdrop-blur-3xl border-r border-primary/5 shadow-2xl py-6 gap-4 z-50 overflow-hidden"
+      className="fixed left-0 top-0 h-screen hidden lg:flex flex-col bg-primary-container text-white py-xl gap-4 z-[60] overflow-hidden"
     >
-      <div className={`flex flex-col gap-1 mb-6 ${isShrunk ? "items-center" : ""}`}>
+      <div
+        className={`flex flex-col mb-xl ${isShrunk ? "items-center" : "px-container-padding"}`}
+      >
         <motion.div
           whileHover={{ scale: 1.05, rotate: 5 }}
-          className="w-12 h-12 bg-secondary rounded-2xl flex items-center justify-center mb-2 shadow-lg shadow-secondary/20 cursor-pointer shrink-0"
+          className="w-12 h-12 bg-primary-fixed rounded-2xl flex items-center justify-center mb-2 shadow-lg shadow-primary/20 cursor-pointer shrink-0"
         >
           <span
-            className="material-symbols-outlined text-white text-2xl"
+            className="material-symbols-outlined text-primary-container text-2xl"
             style={{ fontVariationSettings: "'FILL' 1" }}
           >
-            admin_panel_settings
+            fitness_center
           </span>
         </motion.div>
-        {!isShrunk && (
+        {!isShrunk ? (
           <motion.div
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -10 }}
             className="flex flex-col"
           >
-            <span className="text-xl font-black text-primary tracking-tighter whitespace-nowrap">
-              ADMIN PANEL
-            </span>
-            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant/60 whitespace-nowrap">
-              Operations Console
+            <h1 className="font-h3 text-h3 tracking-tighter text-primary-fixed leading-tight">
+              FORGE FITNESS
+            </h1>
+            <p className="font-label-caps text-label-caps text-primary-fixed-dim/60 mt-xs uppercase">
+              EXECUTIVE CONTROL
+            </p>
+          </motion.div>
+        ) : (
+          <motion.div
+            whileHover={{ scale: 1.05, rotate: 5 }}
+            className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center mb-2 shadow-lg cursor-pointer shrink-0"
+          >
+            <span
+              className="material-symbols-outlined text-primary-fixed text-2xl"
+              style={{ fontVariationSettings: "'FILL' 1" }}
+            >
+              fitness_center
             </span>
           </motion.div>
         )}
@@ -53,7 +88,9 @@ export default function AdminSidebar({ activeSection, setActiveSection, isShrunk
 
       <div className="flex flex-col gap-1.5 flex-1 overflow-y-auto pr-2 custom-scrollbar">
         {menuItems.map((item, index) => {
-          const isActive = activeSection === item.label;
+          const isActive =
+            activeSection === item.label ||
+            (activeSection === "Dashboard" && item.label === "Home");
           return (
             <motion.a
               key={index}
@@ -64,25 +101,16 @@ export default function AdminSidebar({ activeSection, setActiveSection, isShrunk
               }}
               whileHover={{ x: isShrunk ? 0 : 4 }}
               whileTap={{ scale: 0.98 }}
-              className={`flex items-center transition-all rounded-2xl group relative overflow-hidden h-12 ${
-                isShrunk ? "justify-center w-12" : "gap-4 p-3.5"
+              className={`flex items-center transition-all rounded-lg group relative overflow-hidden h-12 ${
+                isShrunk ? "justify-center w-12" : "gap-md px-md"
               } ${
                 isActive
-                  ? "text-primary font-bold bg-primary/5"
-                  : "text-on-surface-variant hover:bg-primary/5 hover:text-primary"
+                  ? "text-secondary-fixed bg-white/10"
+                  : "text-on-primary-container hover:bg-white/5"
               }`}
             >
-              {isActive && (
-                <motion.div
-                  layoutId="admin-active-pill"
-                  className={`absolute left-0 bg-primary rounded-full ${isShrunk ? "top-1 bottom-1 w-1.5" : "top-2 bottom-2 w-1"}`}
-                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                />
-              )}
               <span
-                className={`material-symbols-outlined text-xl transition-transform duration-300 group-hover:scale-110 shrink-0 ${
-                  isActive ? "text-primary" : "text-on-surface-variant/70 group-hover:text-primary"
-                }`}
+                className={`material-symbols-outlined text-xl transition-transform duration-300 group-hover:scale-110 shrink-0`}
                 style={isActive ? { fontVariationSettings: "'FILL' 1" } : {}}
               >
                 {item.icon}
@@ -91,7 +119,7 @@ export default function AdminSidebar({ activeSection, setActiveSection, isShrunk
                 <motion.span
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="text-[14px] tracking-tight whitespace-nowrap"
+                  className="font-body-lg text-body-lg whitespace-nowrap"
                 >
                   {item.label}
                 </motion.span>
@@ -101,20 +129,64 @@ export default function AdminSidebar({ activeSection, setActiveSection, isShrunk
         })}
       </div>
 
-      <div className="mt-auto pt-6 border-t border-primary/5 flex items-center gap-3 rounded-2xl p-2">
-        <div className="relative shrink-0">
-          <img
-            className="w-10 h-10 rounded-full object-cover ring-2 ring-primary/10"
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuDsh2Ltg36aujsb2e2OaTW7Z5uu-pdmf2z7ZfyAzNcTd2pRaS7XDVYqhlLmjqMDaTu7c9mpIbkPtH29wCUZ7we3E_sWhIRTuWeGhTR-2pTm5J9xy7fOA7IlGx_KTIpzkMwlONPY3NhfYdxIt1FnhF8yMyhF0vyo05e9znHXs-TzCPVwYw-bIFwWIpmrakbDI9c4GUMoOk5Z3Vqs3_FtzuL-M1NKca6-tXNo_p6txG0FgF8_u6zYyconfJPFRfppDbdIidMSztiUv00"
-            alt="Admin user"
-          />
-          <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-surface rounded-full" />
-        </div>
-        {!isShrunk && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col">
-            <span className="font-bold text-[13px] text-primary whitespace-nowrap">Admin User</span>
-            <span className="text-[11px] text-on-surface-variant/70 font-medium whitespace-nowrap">Super Admin</span>
-          </motion.div>
+      <div className={`mt-auto ${isShrunk ? "items-center" : "px-md"}`}>
+        {isAuthenticated && user ? (
+          <div className="glass-panel p-md rounded-xl bg-white/5 border-white/10 border backdrop-blur-md">
+            <div
+              onClick={(e) => {
+                e.preventDefault();
+                setActiveSection("Profile");
+              }}
+              className="flex items-center gap-sm cursor-pointer"
+            >
+              <div className="w-10 h-10 rounded-full border border-primary-fixed-dim bg-[#071952] flex items-center justify-center text-[10px] font-black italic overflow-hidden">
+                {user.profileImage ? (
+                  <img src={user.profileImage} alt={user.fullName} className="w-full h-full object-cover" />
+                ) : (
+                  initials
+                )}
+              </div>
+              {!isShrunk && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="flex flex-col overflow-hidden"
+                >
+                  <p className="font-body-md text-body-md font-bold text-white truncate">
+                    {user.fullName}
+                  </p>
+                  <p className="text-[10px] text-primary-fixed-dim uppercase tracking-widest">
+                    {user.role} ID: {user._id?.substring(0, 4).toUpperCase()}
+                  </p>
+                </motion.div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="glass-panel p-md rounded-xl bg-white/5 border-white/10 border backdrop-blur-md hover:bg-white/10 transition-all cursor-pointer">
+            <button
+              onClick={() => router.push("/auth/login")}
+              className="flex items-center gap-sm w-full"
+            >
+              <div className="w-10 h-10 rounded-full border border-primary-fixed-dim bg-primary-fixed/20 flex items-center justify-center">
+                <LogIn size={18} className="text-primary-fixed" />
+              </div>
+              {!isShrunk && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="flex flex-col overflow-hidden"
+                >
+                  <p className="font-body-md text-body-md font-bold text-white truncate">
+                    Sign In
+                  </p>
+                  <p className="text-[10px] text-primary-fixed-dim uppercase tracking-widest">
+                    Login Required
+                  </p>
+                </motion.div>
+              )}
+            </button>
+          </div>
         )}
       </div>
     </motion.nav>

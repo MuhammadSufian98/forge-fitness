@@ -21,7 +21,14 @@ export default function LoginPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await loginSubmit();
+    const result = await loginSubmit();
+    if (result.success) {
+      if (result.data.role === "admin" || result.data.role === "coach") {
+        window.location.href = "/admin/dashboard";
+      } else {
+        window.location.href = "/dashboard";
+      }
+    }
   };
 
   return (

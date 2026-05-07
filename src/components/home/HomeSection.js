@@ -6,52 +6,48 @@ import {
   Timer,
   Heart,
   Moon,
-  Play,
-  Bookmark,
-  ArrowRight,
   TrendingUp,
+  Zap,
+  ShieldCheck,
+  Trophy,
 } from "lucide-react";
 
-export default function HomeSection({ setActiveTab }) {
+export default function HomeSection() {
   const stats = [
     {
-      label: "Kcal Burned",
-      value: "842",
+      label: "Energy Burned",
+      value: "---",
       unit: "kcal",
       icon: <Flame size={18} />,
-      color: "text-[#088395]",
-      trend: "+12%",
+      trend: "Tracking",
     },
     {
-      label: "Min Active",
-      value: "45",
+      label: "Active Time",
+      value: "---",
       unit: "min",
       icon: <Timer size={18} />,
-      color: "text-[#088395]",
-      trend: "+5%",
+      trend: "Live",
     },
     {
-      label: "Avg Heart Rate",
-      value: "142",
+      label: "Heart Performance",
+      value: "---",
       unit: "bpm",
       icon: <Heart size={18} />,
-      color: "text-[#35a29f]",
-      trend: "Peak",
+      trend: "Ready",
     },
     {
-      label: "Sleep Score",
-      value: "88",
+      label: "Rest Quality",
+      value: "---",
       unit: "/100",
       icon: <Moon size={18} />,
-      color: "text-[#071952]",
-      trend: "Stable",
+      trend: "Optimal",
     },
   ];
 
   return (
-    <div className="flex-1 bg-[#f2f3f6] overflow-y-auto custom-scrollbar h-full">
+    <div className="flex-1 bg-[#f2f3f6] overflow-y-auto custom-scrollbar h-full font-sans">
       <div className="max-w-[1400px] mx-auto px-6 lg:px-12 py-10 space-y-12 pb-32">
-        {/* NEW WIDE HERO: Fixed Text Width Issues */}
+        {/* HERO SECTION: General Greeting */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -77,8 +73,8 @@ export default function HomeSection({ setActiveTab }) {
 
               {/* Removed all restrictive widths here to stop the "tower" text effect */}
               <h1 className="text-white font-black text-4xl lg:text-6xl uppercase tracking-tighter italic leading-none">
-                Welcome Back,{" "}
-                <span className="text-[#35a29f] not-italic">Sufian</span>
+                FORGE YOUR,{" "}
+                <span className="text-[#35a29f] not-italic">ULTIMATE SELF</span>
               </h1>
 
               <p className="text-white/70 font-medium text-base lg:text-lg block w-full">
@@ -99,83 +95,104 @@ export default function HomeSection({ setActiveTab }) {
           </div>
         </motion.section>
 
-        {/* Stats Grid - Balanced Spacing */}
+        {/* Tactical Metrics Grid */}
         <section className="grid grid-cols-2 lg:grid-cols-4 gap-6">
           {stats.map((stat, i) => (
-            <div
+            <motion.div
               key={i}
-              className="bg-white p-6 rounded-[2rem] border border-[#071952]/5 shadow-sm hover:shadow-md transition-all"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.1 }}
+              className="bg-white p-8 rounded-[2.5rem] border border-[#071952]/5 shadow-sm group hover:shadow-xl transition-all"
             >
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 rounded-xl bg-[#f2f3f6] text-[#088395]">
+              <div className="flex items-center justify-between mb-6">
+                <div className="p-4 rounded-2xl bg-[#f2f3f6] text-[#088395] group-hover:bg-[#088395] group-hover:text-white transition-colors">
                   {stat.icon}
                 </div>
-                <span className="text-[10px] font-black text-[#071952]/30 uppercase">
+                <span className="text-[9px] font-black text-[#35a29f] uppercase tracking-widest bg-[#35a29f]/10 px-3 py-1 rounded-full">
                   {stat.trend}
                 </span>
               </div>
-              <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-black text-[#071952] tracking-tighter">
+              <div className="flex items-baseline gap-2">
+                <span className="text-4xl font-black text-[#071952] tracking-tighter italic">
                   {stat.value}
                 </span>
-                <span className="text-[10px] font-bold text-[#071952]/40 uppercase">
+                <span className="text-[10px] font-black text-[#071952]/30 uppercase">
                   {stat.unit}
                 </span>
               </div>
-              <p className="text-[10px] font-bold text-[#071952]/60 uppercase mt-2">
+              <p className="text-[10px] font-black text-[#071952]/50 uppercase mt-2 tracking-widest">
                 {stat.label}
               </p>
-            </div>
+            </motion.div>
           ))}
         </section>
 
-        {/* Main Content: Two Column Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 text-[#071952]">
-          {/* Featured Card */}
-          <div className="lg:col-span-2 bg-white rounded-[2.5rem] p-8 border border-[#071952]/5 shadow-sm flex flex-col md:flex-row gap-8">
-            <div className="w-full md:w-1/3 aspect-square rounded-[2rem] overflow-hidden">
+        {/* Feature Bento Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Feature */}
+          <motion.div
+            whileHover={{ y: -5 }}
+            className="lg:col-span-2 bg-white rounded-[3rem] p-10 border border-[#071952]/5 shadow-sm flex flex-col md:flex-row gap-10 items-center"
+          >
+            <div className="w-full md:w-2/5 aspect-square rounded-[2.5rem] overflow-hidden shadow-2xl relative group">
               <img
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                 src="https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?q=80&w=600"
-                alt="HIIT"
+                alt="Elite Training"
               />
+              <div className="absolute inset-0 bg-[#071952]/20 group-hover:bg-transparent transition-colors"></div>
             </div>
-            <div className="flex-1 flex flex-col justify-center space-y-4">
-              <div className="flex gap-2">
-                <span className="bg-[#088395]/10 text-[#088395] px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">
-                  Advanced
-                </span>
+
+            <div className="flex-1 space-y-6">
+              <div className="inline-block px-4 py-1.5 rounded-full bg-[#088395]/10 text-[#088395] text-[10px] font-black uppercase tracking-widest">
+                Recommended Protocol
               </div>
-              <h3 className="text-3xl font-black uppercase italic">
-                Power Forge HIIT
+              <h3 className="text-4xl font-black text-[#071952] uppercase italic leading-none tracking-tighter">
+                Titan Strength <br /> Hybrid HIIT
               </h3>
-              <p className="text-sm text-[#071952]/60 leading-relaxed">
-                Maximize metabolic rate and strength gain with our signature
-                high-intensity hybrid program.
+              <p className="text-sm text-[#071952]/60 leading-relaxed font-medium">
+                Our signature metabolic conditioning program designed to
+                maximize raw power and aesthetic definition. Optimized for all
+                levels.
               </p>
-              <button className="w-fit bg-[#071952] text-white px-8 py-4 rounded-2xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-[#071952]/20">
-                Start Now
+              <button className="flex items-center gap-3 bg-[#071952] text-white px-10 py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-[#071952]/20 hover:bg-[#088395] transition-all">
+                Enter Protocol <Zap size={14} />
               </button>
             </div>
-          </div>
+          </motion.div>
 
-          {/* Activity Mini Chart */}
-          <div className="bg-white rounded-[2.5rem] p-8 border border-[#071952]/5 shadow-sm">
-            <h3 className="text-sm font-black uppercase mb-8 flex justify-between items-center opacity-40">
-              Activity Trends <TrendingUp size={16} />
-            </h3>
-            <div className="h-32 flex items-end justify-between gap-2">
-              {[40, 70, 45, 90, 65, 80, 55].map((val, i) => (
-                <div
-                  key={i}
-                  className="flex-1 bg-[#f2f3f6] rounded-full relative overflow-hidden h-full"
-                >
-                  <div
-                    className={`absolute bottom-0 left-0 right-0 transition-all duration-1000 ${i === 3 ? "bg-[#088395]" : "bg-[#071952]/10"}`}
-                    style={{ height: `${val}%` }}
-                  />
-                </div>
-              ))}
+          {/* Side Insight Card */}
+          <div className="bg-[#071952] rounded-[3rem] p-10 text-white flex flex-col justify-between shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-[#35a29f]/20 rounded-full blur-3xl -mr-16 -mt-16"></div>
+
+            <div className="relative z-10">
+              <Trophy size={32} className="text-[#35a29f] mb-6" />
+              <h3 className="text-2xl font-black uppercase italic tracking-tighter mb-4 leading-tight">
+                Peak Performance <br /> Dashboard
+              </h3>
+              <p className="text-white/40 text-xs font-medium leading-relaxed">
+                Connect your biometric devices to initialize full tracking and
+                unlock AI-driven performance feedback.
+              </p>
+            </div>
+
+            <div className="relative z-10 pt-10">
+              <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: "65%" }}
+                  className="h-full bg-[#35a29f]"
+                />
+              </div>
+              <div className="flex justify-between mt-4">
+                <span className="text-[9px] font-black uppercase tracking-widest text-white/30">
+                  System Sync
+                </span>
+                <span className="text-[9px] font-black uppercase tracking-widest text-[#35a29f]">
+                  65% Complete
+                </span>
+              </div>
             </div>
           </div>
         </div>
