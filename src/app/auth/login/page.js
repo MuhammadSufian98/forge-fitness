@@ -51,7 +51,7 @@ export default function LoginPage() {
 
           <div className="relative z-10">
             <Link
-              href="/"
+              href="/dashboard"
               className="flex items-center gap-2 text-white/50 hover:text-white transition-colors group mb-4"
             >
               <ChevronLeft
