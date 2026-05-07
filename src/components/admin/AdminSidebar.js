@@ -78,17 +78,7 @@ export default function AdminSidebar({
             </p>
           </motion.div>
         ) : (
-          <motion.div
-            whileHover={{ scale: 1.05, rotate: 5 }}
-            className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center mb-2 shadow-lg cursor-pointer shrink-0"
-          >
-            <span
-              className="material-symbols-outlined text-primary-fixed text-2xl"
-              style={{ fontVariationSettings: "'FILL' 1" }}
-            >
-              fitness_center
-            </span>
-          </motion.div>
+          ""
         )}
       </div>
 
@@ -138,16 +128,20 @@ export default function AdminSidebar({
       <div className={`mt-auto ${isShrunk ? "items-center px-2" : "px-md"}`}>
         {isAuthenticated && user ? (
           <div
-            className={`glass-panel rounded-xl bg-white/5 border-white/10 border backdrop-blur-md flex items-center ${isShrunk ? "flex-col p-2 gap-4" : "p-2 justify-between"}`}
+            className={`rounded-[1.25rem] bg-[#071952] border border-[#35a29f]/20 shadow-2xl flex items-center ${
+              isShrunk ? "flex-col p-2 gap-4" : "p-2.5 justify-between"
+            }`}
           >
             <div
               onClick={(e) => {
                 e.preventDefault();
                 setActiveSection("Profile");
               }}
-              className={`flex items-center cursor-pointer overflow-hidden ${isShrunk ? "justify-center" : "gap-sm flex-1"}`}
+              className={`flex items-center cursor-pointer overflow-hidden ${
+                isShrunk ? "justify-center" : "gap-3 flex-1"
+              }`}
             >
-              <div className="w-10 h-10 rounded-full border border-primary-fixed-dim bg-[#071952] flex items-center justify-center text-[10px] font-black italic shrink-0 overflow-hidden">
+              <div className="w-10 h-10 rounded-[1rem] border-2 border-[#35a29f] bg-[#071952] flex items-center justify-center text-white text-[10px] font-black italic shrink-0 overflow-hidden shadow-xl">
                 {user.profileImage ? (
                   <img
                     src={user.profileImage}
@@ -164,10 +158,10 @@ export default function AdminSidebar({
                   animate={{ opacity: 1 }}
                   className="flex flex-col overflow-hidden"
                 >
-                  <p className="font-body-md text-body-md font-bold text-white truncate">
+                  <p className="font-body-md text-sm font-bold text-white truncate uppercase tracking-tight italic">
                     {user.fullName}
                   </p>
-                  <p className="text-[10px] text-primary-fixed-dim uppercase tracking-widest">
+                  <p className="text-[9px] font-black text-[#35a29f] uppercase tracking-widest leading-none">
                     {user.role} ID: {user._id?.substring(0, 4).toUpperCase()}
                   </p>
                 </motion.div>
@@ -179,20 +173,20 @@ export default function AdminSidebar({
                 e.stopPropagation();
                 logout();
               }}
-              className="p-2 text-primary-fixed-dim hover:text-white hover:bg-white/10 transition-all rounded-lg"
+              className="p-3 text-white/50 hover:text-white hover:bg-[#35a29f] transition-all rounded-[1rem] flex items-center justify-center"
               title="Sign Out"
             >
               <LogOut size={16} />
             </button>
           </div>
         ) : (
-          <div className="glass-panel p-md rounded-xl bg-white/5 border-white/10 border backdrop-blur-md hover:bg-white/10 transition-all cursor-pointer">
+          <div className="rounded-[1.25rem] p-4 bg-[#071952] border border-[#35a29f]/20 hover:bg-[#35a29f]/5 transition-all cursor-pointer shadow-2xl">
             <button
               onClick={() => router.push("/auth/login")}
-              className="flex items-center gap-sm w-full"
+              className="flex items-center gap-3 w-full"
             >
-              <div className="w-10 h-10 rounded-full border border-primary-fixed-dim bg-primary-fixed/20 flex items-center justify-center">
-                <LogIn size={18} className="text-primary-fixed" />
+              <div className="w-10 h-10 rounded-[1rem] border-2 border-[#35a29f] bg-white/5 flex items-center justify-center shadow-xl">
+                <LogIn size={18} className="text-[#35a29f]" />
               </div>
               {!isShrunk && (
                 <motion.div
@@ -200,11 +194,11 @@ export default function AdminSidebar({
                   animate={{ opacity: 1 }}
                   className="flex flex-col overflow-hidden"
                 >
-                  <p className="font-body-md text-body-md font-bold text-white truncate">
-                    Sign In
+                  <p className="font-body-md text-sm font-bold text-white truncate uppercase tracking-tight italic">
+                    Authenticate
                   </p>
-                  <p className="text-[10px] text-primary-fixed-dim uppercase tracking-widest">
-                    Login Required
+                  <p className="text-[9px] font-black text-[#35a29f] uppercase tracking-widest leading-none">
+                    Required for Access
                   </p>
                 </motion.div>
               )}

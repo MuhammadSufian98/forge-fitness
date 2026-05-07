@@ -1,5 +1,5 @@
 "use client";
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import useScheduleStore from "@/stores/home/useScheduleStore";
 import useSWR, { mutate } from "swr";
@@ -25,15 +25,32 @@ export default function ScheduleSection() {
   const closeClass = useScheduleStore((state) => state.closeClass);
   const bookClass = useScheduleStore((state) => state.bookClass);
 
+  const [activeTab, setActiveTab] = useState("Upcoming"); // Upcoming, Live, History
+
   const { data: scheduleData, isLoading, error } = useSWR(`/api/schedule?date=${activeDate}`, fetcher);
   const classes = scheduleData?.data || [];
 
   const [bookingId, setBookingId] = useState(null);
 
+  // Auto-refresh logic to re-categorize sessions when they transition states
+  useEffect(() => {
+    const timer = setInterval(() => {
+      mutate(`/api/schedule?date=${activeDate}`);
+    }, 30000); // Check every 30 seconds
+    return () => clearInterval(timer);
+  }, [activeDate]);
+
+  const filteredClasses = useMemo(() => {
+    if (activeTab === "Upcoming") return classes.filter(c => c.currentStatus === "Upcoming");
+    if (activeTab === "Live") return classes.filter(c => c.currentStatus === "Live");
+    if (activeTab === "History") return classes.filter(c => c.currentStatus === "Expired");
+    return classes;
+  }, [classes, activeTab]);
+
   const handleBook = async (e, scheduleId) => {
     e.stopPropagation();
     setBookingId(scheduleId);
-    const result = await bookClass(scheduleId);
+    const result = await bookClass(scheduleId, activeDate);
     if (result.success) {
       mutate(`/api/schedule?date=${activeDate}`);
       // If the selected class is the one being booked, update it too
@@ -50,7 +67,7 @@ export default function ScheduleSection() {
   const weekDays = useMemo(() => {
     const days = [];
     const today = new Date();
-    for (let i = 0; i < 7; i++) {
+    for (let i = -1; i < 7; i++) { // Allow 1 day past for history
       const date = new Date(today);
       date.setDate(today.getDate() + i);
       days.push({
@@ -83,9 +100,21 @@ export default function ScheduleSection() {
               <h2 className="text-3xl font-black text-[#071952] uppercase italic tracking-tighter">
                 Your <span className="text-[#088395]">Schedule</span>
               </h2>
-              <button className="flex items-center gap-2 text-[10px] font-black text-[#088395] uppercase tracking-widest hover:opacity-70 transition-all">
-                Full Calendar <ChevronRight size={14} />
-              </button>
+              <div className="flex bg-white/50 p-1 rounded-2xl border border-[#071952]/5">
+                {["Upcoming", "Live", "History"].map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`px-4 py-2 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all ${
+                      activeTab === tab 
+                        ? "bg-[#071952] text-white shadow-lg" 
+                        : "text-[#071952]/40 hover:text-[#071952]"
+                    }`}
+                  >
+                    {tab === "Live" ? "Ongoing" : tab}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
@@ -113,42 +142,54 @@ export default function ScheduleSection() {
 
           {/* Timeline List */}
           <section className="space-y-6">
-            <h3 className="text-[10px] font-black text-[#071952]/40 uppercase tracking-[0.3em]">
-              {activeDate === new Date().toISOString().split('T')[0] ? "Today's" : "Scheduled"} Sessions
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-[10px] font-black text-[#071952]/40 uppercase tracking-[0.3em]">
+                {activeTab} Sessions
+              </h3>
+              {activeTab === "Live" && filteredClasses.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                  <span className="text-[9px] font-black text-red-500 uppercase tracking-widest italic">Live Feed Active</span>
+                </div>
+              )}
+            </div>
 
             {isLoading ? (
               <div className="flex flex-col items-center justify-center py-20 gap-4">
                 <Loader2 className="animate-spin text-[#088395]" size={40} />
                 <p className="text-[10px] font-black text-[#071952]/40 uppercase tracking-widest">Loading Protocols...</p>
               </div>
-            ) : classes.length === 0 ? (
+            ) : filteredClasses.length === 0 ? (
               <div className="bg-white/50 border-2 border-dashed border-[#071952]/5 rounded-[2.5rem] py-20 flex flex-col items-center justify-center text-center px-10">
                 <Calendar className="text-[#071952]/10 mb-4" size={48} />
-                <h4 className="text-xl font-black text-[#071952] uppercase italic">No Protocols Scheduled</h4>
+                <h4 className="text-xl font-black text-[#071952] uppercase italic">No {activeTab} Protocols</h4>
                 <p className="text-sm font-medium text-[#071952]/40 mt-2 max-w-xs">
-                  There are no training sessions scheduled for this date yet. Check back later or select another day.
+                  {activeTab === "Upcoming" ? "All set! Check back for new sessions." : 
+                   activeTab === "Live" ? "Nothing live right now. Prepare for the next wave." :
+                   "History clear. Ready to forge new records?"}
                 </p>
               </div>
             ) : (
               <div className="space-y-6 relative border-l-2 border-[#071952]/5 ml-4 pl-8">
-                {classes.map((cls) => {
+                {filteredClasses.map((cls) => {
                   const isBooking = bookingId === cls._id;
-                  const isReserved = cls.isEnrolled; // Assuming backend sends this or we calculate it
+                  const isReserved = cls.isEnrolled;
+                  const isExpired = cls.currentStatus === "Expired";
+                  const isLive = cls.currentStatus === "Live";
 
                   return (
                     <motion.div
                       key={cls._id}
                       layoutId={`cls-card-${cls._id}`}
-                      className={`relative bg-white p-8 rounded-[2.5rem] border border-[#071952]/5 shadow-sm group transition-all hover:shadow-xl`}
+                      className={`relative bg-white p-8 rounded-[2.5rem] border border-[#071952]/5 shadow-sm group transition-all ${isExpired ? "opacity-60 grayscale-[0.5]" : "hover:shadow-xl"}`}
                     >
                       {/* Timeline Dot */}
-                      <div className="absolute -left-[41px] top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-[#088395] border-4 border-[#f2f3f6]" />
+                      <div className={`absolute -left-[41px] top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-4 border-[#f2f3f6] ${isLive ? "bg-red-500 animate-pulse" : isExpired ? "bg-gray-400" : "bg-[#088395]"}`} />
 
                       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                         <div className="flex gap-6 items-center">
                           <div className="text-center min-w-[80px]">
-                            <span className="block text-xl font-black text-[#071952] leading-none uppercase">
+                            <span className={`block text-xl font-black leading-none uppercase ${isExpired ? "text-gray-500" : "text-[#071952]"}`}>
                               {formatTime(cls.startTime).split(' ')[0]}
                             </span>
                             <span className="text-[10px] font-bold text-[#071952]/30 uppercase tracking-widest">
@@ -157,46 +198,59 @@ export default function ScheduleSection() {
                           </div>
                           <div className="h-10 w-[1px] bg-[#071952]/10 hidden lg:block" />
                           <div>
-                            <h4 className="text-xl font-black text-[#071952] uppercase italic group-hover:text-[#088395] transition-colors">
-                              {cls.title}
-                            </h4>
+                            <div className="flex items-center gap-3">
+                              <h4 className={`text-xl font-black uppercase italic transition-colors ${isExpired ? "text-gray-500" : "group-hover:text-[#088395] text-[#071952]"}`}>
+                                {cls.title}
+                              </h4>
+                              {isLive && (
+                                <span className="bg-red-500 text-white text-[8px] font-black px-2 py-0.5 rounded-full flex items-center gap-1">
+                                  <span className="w-1 h-1 bg-white rounded-full animate-pulse" /> LIVE
+                                </span>
+                              )}
+                            </div>
                             <div className="flex items-center gap-4 mt-1">
                               <div className="flex items-center gap-1.5">
-                                <User size={14} className="text-[#35a29f]" />
-                                <span className="text-xs font-bold text-[#071952]/60">
+                                <User size={14} className={isExpired ? "text-gray-400" : "text-[#35a29f]"} />
+                                <span className={`text-xs font-bold ${isExpired ? "text-gray-400" : "text-[#071952]/60"}`}>
                                   {cls.coachNames?.join(', ') || 'Staff Coach'}
                                 </span>
                               </div>
                               <div className="flex items-center gap-1.5">
-                                <MapPin size={14} className="text-[#088395]" />
+                                <MapPin size={14} className={isExpired ? "text-gray-400" : "text-[#088395]"} />
                                 <span className="text-xs font-bold text-[#071952]/40 uppercase tracking-tighter">
                                   {cls.room}
                                 </span>
                               </div>
                             </div>
                             {/* Occupancy Bar */}
-                            <div className="mt-4 w-48 h-1.5 bg-[#f2f3f6] rounded-full overflow-hidden">
-                                <motion.div 
-                                    initial={{ width: 0 }}
-                                    animate={{ width: `${(cls.currentOccupancy / cls.capacity) * 100}%` }}
-                                    className="h-full bg-[#088395] rounded-full"
-                                />
-                            </div>
+                            {!isExpired && (
+                              <div className="mt-4 w-48 h-1.5 bg-[#f2f3f6] rounded-full overflow-hidden">
+                                  <motion.div 
+                                      initial={{ width: 0 }}
+                                      animate={{ width: `${(cls.currentOccupancy / cls.capacity) * 100}%` }}
+                                      className={`h-full rounded-full ${isLive ? "bg-red-500" : "bg-[#088395]"}`}
+                                  />
+                              </div>
+                            )}
                           </div>
                         </div>
 
                         <div className="flex items-center gap-3">
                           <button
                             onClick={() => openClass(cls)}
-                            className="p-4 bg-[#f2f3f6] text-[#071952] rounded-2xl hover:bg-[#071952] hover:text-white transition-all shadow-sm"
+                            className={`p-4 rounded-2xl transition-all shadow-sm ${isExpired ? "bg-gray-100 text-gray-400" : "bg-[#f2f3f6] text-[#071952] hover:bg-[#071952] hover:text-white"}`}
                           >
                             <Info size={20} />
                           </button>
                           <button 
-                            disabled={isBooking || isReserved || cls.currentOccupancy >= cls.capacity}
+                            disabled={isBooking || isReserved || cls.currentOccupancy >= cls.capacity || isExpired || isLive}
                             onClick={(e) => handleBook(e, cls._id)}
                             className={`flex-1 lg:flex-none px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-2
-                                ${isReserved 
+                                ${isExpired 
+                                    ? "bg-gray-200 text-gray-500 cursor-default shadow-none" 
+                                    : isLive
+                                    ? "bg-red-50/50 text-red-500 border border-red-200 cursor-default shadow-none"
+                                    : isReserved 
                                     ? "bg-[#35a29f] text-white shadow-[#35a29f]/20" 
                                     : "bg-[#071952] text-white hover:bg-[#088395] shadow-[#071952]/20 disabled:opacity-50"}`}
                           >
@@ -205,6 +259,10 @@ export default function ScheduleSection() {
                                     <Loader2 size={16} className="animate-spin" />
                                     Booking...
                                 </>
+                            ) : isExpired ? (
+                                "Session Concluded"
+                            ) : isLive ? (
+                                "Session In Progress"
                             ) : isReserved ? (
                                 <>
                                     <CheckCircle2 size={16} />

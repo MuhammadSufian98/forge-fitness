@@ -3,6 +3,7 @@ import { getAuthUser } from '@/lib/auth';
 import connectDB from '@/lib/mongodb';
 import Schedule from '@/models/Schedule';
 import User from '@/models/User';
+import Booking from '@/models/Booking';
 import { z } from 'zod';
 
 const scheduleSchema = z.object({
@@ -37,9 +38,17 @@ export async function GET(req) {
       const endOfDay = new Date(dateParam);
       endOfDay.setHours(23, 59, 59, 999);
 
-      query.startTime = {
-        $gte: startOfDay,
-        $lte: endOfDay
+      // Fetch sessions that start on this day OR are daily/recursive
+      query = {
+        $or: [
+          {
+            startTime: {
+              $gte: startOfDay,
+              $lte: endOfDay
+            }
+          },
+          { isDaily: true }
+        ]
       };
     }
 
@@ -54,8 +63,8 @@ export async function GET(req) {
         room: 1,
         description: 1,
         coaches: 1,
-        enrolledUsers: 1,
         capacity: 1,
+        isDaily: 1,
       };
       populateOptions = [{ path: 'coaches', select: 'fullName' }];
     } else if (user.role === 'coach') {
@@ -66,53 +75,111 @@ export async function GET(req) {
         room: 1,
         description: 1,
         coaches: 1,
-        enrolledUsers: 1,
         capacity: 1,
+        isDaily: 1,
       };
       populateOptions = [
-        { path: 'coaches', select: 'fullName' },
-        { path: 'enrolledUsers', select: 'fullName email' }
+        { path: 'coaches', select: 'fullName' }
       ];
     } else if (user.role === 'admin') {
       projection = {};
       populateOptions = [
         { path: 'coaches', select: 'fullName email' },
-        { path: 'enrolledUsers', select: 'fullName email' },
         { path: 'editHistory.adminId', select: 'fullName' }
       ];
     }
 
     const schedules = await Schedule.find(query, projection).populate(populateOptions).lean();
 
-    const formattedSchedules = schedules.map((schedule) => {
-      const currentOccupancy = schedule.enrolledUsers?.length || 0;
-      
-      if (user.role === 'athlete') {
-        const isEnrolled = schedule.enrolledUsers?.some(u => u.toString() === user.id);
-        const { enrolledUsers, ...rest } = schedule;
-        return {
-          ...rest,
-          currentOccupancy,
-          isEnrolled,
-          coachNames: schedule.coaches.map(c => c.fullName)
-        };
-      }
+    // Fetch all bookings for the requested date to calculate real occupancy
+    if (dateParam) {
+        const dateBookings = await Booking.find({ date: dateParam }).lean();
+        const now = new Date();
+        const formattedSchedules = schedules.map((schedule) => {
+          const sessionBookings = dateBookings.filter(b => b.scheduleId.toString() === schedule._id.toString());
+          const currentOccupancy = sessionBookings.length;
+          
+          let effectiveStartTime = new Date(schedule.startTime);
+          let effectiveEndTime = new Date(schedule.endTime);
 
-      if (user.role === 'coach') {
-        return {
-          ...schedule,
-          currentOccupancy,
-          coachNames: schedule.coaches.map(c => c.fullName)
-        };
-      }
+          if (schedule.isDaily) {
+            const targetDate = new Date(dateParam);
+            effectiveStartTime.setFullYear(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
+            effectiveEndTime.setFullYear(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
 
-      return {
-        ...schedule,
-        currentOccupancy
-      };
-    });
+            const originalStart = new Date(schedule.startTime);
+            const originalEnd = new Date(schedule.endTime);
+            const dayDiff = Math.floor((originalEnd - originalStart) / (1000 * 60 * 60 * 24));
+            if (dayDiff > 0) effectiveEndTime.setDate(effectiveEndTime.getDate() + dayDiff);
+          }
 
-    return ApiResponse({ success: true, data: formattedSchedules });
+          const isEnrolled = sessionBookings.some(b => b.userId.toString() === user.id);
+
+          return {
+            ...schedule,
+            startTime: effectiveStartTime.toISOString(),
+            endTime: effectiveEndTime.toISOString(),
+            currentOccupancy,
+            isEnrolled,
+            currentStatus: now > effectiveEndTime ? 'Expired' : now >= effectiveStartTime ? 'Live' : 'Upcoming',
+            coachNames: schedule.coaches.map(c => (typeof c === 'object' ? c.fullName : 'Coach'))
+          };
+        });
+
+        // Special handling for admin/coach roster
+        if ((user.role === 'admin' || user.role === 'coach')) {
+            const scheduleIds = formattedSchedules.map(s => s._id);
+            const fullBookings = await Booking.find({ 
+                scheduleId: { $in: scheduleIds },
+                date: dateParam 
+            }).populate('userId', 'fullName email').lean();
+
+            formattedSchedules.forEach(s => {
+                s.enrolledUsers = fullBookings
+                    .filter(b => b.scheduleId.toString() === s._id.toString())
+                    .map(b => b.userId);
+            });
+        }
+
+        return ApiResponse({ success: true, data: formattedSchedules });
+    } else {
+        // DASHBOARD CASE: Return all instances the user has booked
+        const userBookings = await Booking.find({ userId: user.id }).populate({
+          path: 'scheduleId',
+          populate: { path: 'coaches', select: 'fullName' }
+        }).lean();
+        const now = new Date();
+        
+        const formattedSchedules = userBookings.map((booking) => {
+          const schedule = booking.scheduleId;
+          if (!schedule) return null;
+
+          let effectiveStartTime = new Date(schedule.startTime);
+          let effectiveEndTime = new Date(schedule.endTime);
+          const targetDate = new Date(booking.date);
+          
+          effectiveStartTime.setFullYear(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
+          effectiveEndTime.setFullYear(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
+
+          const originalStart = new Date(schedule.startTime);
+          const originalEnd = new Date(schedule.endTime);
+          const dayDiff = Math.floor((originalEnd - originalStart) / (1000 * 60 * 60 * 24));
+          if (dayDiff > 0) effectiveEndTime.setDate(effectiveEndTime.getDate() + dayDiff);
+
+          return {
+            ...schedule,
+            _id: schedule._id, // Keep original ID for UI keys but it's a specific instance
+            bookingId: booking._id,
+            startTime: effectiveStartTime.toISOString(),
+            endTime: effectiveEndTime.toISOString(),
+            isEnrolled: true,
+            currentStatus: now > effectiveEndTime ? 'Expired' : now >= effectiveStartTime ? 'Live' : 'Upcoming',
+            coachNames: schedule.coaches?.map(c => c.fullName) || []
+          };
+        }).filter(Boolean);
+
+        return ApiResponse({ success: true, data: formattedSchedules });
+    }
   } catch (error) {
     console.error('Schedule GET Error:', error);
     return ApiResponse({ success: false, message: 'Internal Server Error', status: 500 });

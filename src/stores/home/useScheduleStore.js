@@ -11,10 +11,10 @@ const useScheduleStore = create((set, get) => ({
   closeClass: () => set({ selectedClass: null }),
   setActiveDate: (activeDate) => set({ activeDate }),
 
-  bookClass: async (scheduleId) => {
+  bookClass: async (scheduleId, date) => {
     set({ isBooking: true, error: null });
     try {
-      const response = await axios.post('/api/schedule/book', { scheduleId });
+      const response = await axios.post('/api/schedule/book', { scheduleId, date });
       if (response.data.success) {
         set({ isBooking: false });
         return { success: true, data: response.data.data };

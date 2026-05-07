@@ -2,9 +2,11 @@ import { ApiResponse } from '@/lib/response';
 import { getAuthUser } from '@/lib/auth';
 import connectDB from '@/lib/mongodb';
 import Schedule from '@/models/Schedule';
+import Booking from '@/models/Booking';
 import mongoose from 'mongoose';
 
 export async function POST(req) {
+  let session;
   try {
     await connectDB();
     const user = await getAuthUser();
@@ -13,10 +15,10 @@ export async function POST(req) {
       return ApiResponse({ success: false, message: 'Unauthorized', status: 401 });
     }
 
-    const { scheduleId } = await req.json();
+    const { scheduleId, date } = await req.json();
 
-    if (!scheduleId) {
-      return ApiResponse({ success: false, message: 'Schedule ID is required', status: 400 });
+    if (!scheduleId || !date) {
+      return ApiResponse({ success: false, message: 'Schedule ID and Date are required', status: 400 });
     }
 
     const schedule = await Schedule.findById(scheduleId);
@@ -25,41 +27,69 @@ export async function POST(req) {
       return ApiResponse({ success: false, message: 'Protocol session not found', status: 404 });
     }
 
-    // 1. Capacity Check
-    if (schedule.enrolledUsers.length >= schedule.capacity) {
+    // New Booking restriction: currentTime >= startTime
+    // Note: startTime for recursive sessions should be calculated based on the 'date' passed
+    let effectiveStartTime = new Date(schedule.startTime);
+    const targetDate = new Date(date);
+    effectiveStartTime.setFullYear(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
+
+    if (new Date() >= effectiveStartTime) {
+      return ApiResponse({ 
+        success: false, 
+        message: 'Booking window closed for this session.', 
+        status: 403 
+      });
+    }
+
+    // Use a transaction for atomic capacity check and booking
+    session = await mongoose.startSession();
+    session.startTransaction();
+
+    // Force a write lock on the schedule document to serialize bookings for this session
+    // This ensures that two concurrent transactions don't both see the same count before inserting
+    await Schedule.findByIdAndUpdate(scheduleId, { $set: { lastBookingAt: new Date() } }).session(session);
+
+    // 1. Check if already booked
+    const existingBooking = await Booking.findOne({ userId: user.id, scheduleId, date }).session(session);
+    if (existingBooking) {
+        await session.abortTransaction();
+        return ApiResponse({ success: false, message: 'You are already enrolled in this session', status: 400 });
+    }
+
+    // 2. Capacity Check
+    const currentOccupancy = await Booking.countDocuments({ scheduleId, date }).session(session);
+    if (currentOccupancy >= schedule.capacity) {
+      await session.abortTransaction();
       return ApiResponse({ success: false, message: 'Protocol at Maximum Capacity', status: 400 });
     }
 
-    // 2. Duplicate Check and Atomic Push
-    // $addToSet ensures uniqueness and atomic operation
-    const updatedSchedule = await Schedule.findByIdAndUpdate(
-      scheduleId,
-      { $addToSet: { enrolledUsers: user.id } },
-      { new: true, runValidators: true }
-    ).populate('coaches', 'fullName');
+    // 3. Create Booking
+    const newBooking = await Booking.create([{
+        userId: user.id,
+        scheduleId,
+        date
+    }], { session });
 
-    // Check if the user was actually added (if they were already there, $addToSet does nothing but won't error)
-    // However, the prompt asks to "Ensure the current userId isn't already in the enrolledUsers array" 
-    // before atomic push or as part of it. Using $addToSet handles it atomically.
+    await session.commitTransaction();
     
-    const wasAlreadyEnrolled = schedule.enrolledUsers.includes(user.id);
-    if (wasAlreadyEnrolled) {
-        return ApiResponse({ success: false, message: 'You are already enrolled in this protocol', status: 400 });
-    }
-
-    const currentOccupancy = updatedSchedule.enrolledUsers.length;
-
     return ApiResponse({
       success: true,
       message: 'Reservation Successful',
       data: {
-          ...updatedSchedule.toObject(),
-          currentOccupancy,
-          coachNames: updatedSchedule.coaches.map(c => c.fullName)
+          ...schedule.toObject(),
+          currentOccupancy: currentOccupancy + 1,
+          isEnrolled: true,
+          coachNames: [] // Will be populated in the main feed
       }
     });
   } catch (error) {
+    if (session) await session.abortTransaction();
     console.error('Schedule Booking Error:', error);
+    if (error.code === 11000) {
+        return ApiResponse({ success: false, message: 'You are already enrolled in this session', status: 400 });
+    }
     return ApiResponse({ success: false, message: 'Internal Server Error', status: 500 });
+  } finally {
+    if (session) session.endSession();
   }
 }

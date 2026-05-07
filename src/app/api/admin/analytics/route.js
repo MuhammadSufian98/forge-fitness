@@ -94,12 +94,14 @@ export async function GET() {
       ...recentSubs.map(s => ({
         type: 'Subscription',
         message: `${s.userId?.fullName || 'Athlete'} ${s.status === 'Active' ? 'activated' : 'requested'} ${s.tier.toUpperCase()} tier`,
-        timestamp: s.createdAt
+        timestamp: s.createdAt,
+        status: s.status === 'Active' ? 'good' : s.status === 'Pending' ? 'warn' : 'error'
       })),
       ...recentUsers.map(u => ({
         type: 'Signup',
         message: `New Recruit: ${u.fullName} joined the Forge`,
-        timestamp: u.createdAt
+        timestamp: u.createdAt,
+        status: 'good'
       }))
     ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 10);
 

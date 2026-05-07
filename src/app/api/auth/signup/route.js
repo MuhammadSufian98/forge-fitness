@@ -25,7 +25,6 @@ export async function POST(req) {
       });
     }
 
-    await dbConnect();
     const body = await req.json();
 
     // Validate input
@@ -33,12 +32,14 @@ export async function POST(req) {
     if (!validation.success) {
       return ApiResponse({
         success: false,
-        message: validation.error.errors[0].message,
+        message: validation.error.issues[0].message,
         status: 400,
       });
     }
 
     const { fullName, email, password, role } = validation.data;
+
+    await dbConnect();
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });

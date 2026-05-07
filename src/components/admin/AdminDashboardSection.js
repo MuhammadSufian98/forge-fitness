@@ -1,5 +1,5 @@
 "use client";
-
+import React from "react";
 import { motion } from "framer-motion";
 import useSWR from "swr";
 import { fetcher } from "@/utils/userAuth";
@@ -10,7 +10,7 @@ import TrialLeadsSection from "./TrialSection";
 import AccountProfileSection from "./ProfileSection";
 import CoachDailyReportsSection from "./CoachDailyReportsSection";
 import useAuthStore from "@/stores/auth/useAuthStore";
-import { Loader2 } from "lucide-react";
+import { Loader2, TrendingUp, Activity, Users } from "lucide-react";
 
 export default function AdminDashboardSection({ activeSection }) {
   const { user } = useAuthStore();
@@ -36,9 +36,29 @@ export default function AdminDashboardSection({ activeSection }) {
     const chartData = analyticsData?.data?.chartData || [];
     const liveFeed = analyticsData?.data?.liveFeed || [];
 
-    // Dynamic scaling for chart
-    const maxRevenue = Math.max(...chartData.map(d => d.revenue), 1000);
-    const maxCount = Math.max(...chartData.map(d => d.count), 50);
+    const maxRevenue = Math.max(...chartData.map((d) => d.revenue), 1000);
+    const maxCount = Math.max(...chartData.map((d) => d.count), 50);
+
+    // SVG Path Generator for Area Chart
+    const getAreaPath = (dataKey, maxVal) => {
+      if (chartData.length < 2) return "";
+      const points = chartData.map((d, i) => {
+        const x = (i / (chartData.length - 1)) * 100;
+        const y = 100 - (d[dataKey] / maxVal) * 80; // Scale to 80% height for padding
+        return `${x},${y}`;
+      });
+      return `M 0,100 L ${points.join(" L ")} L 100,100 Z`;
+    };
+
+    const getLinePath = (dataKey, maxVal) => {
+      if (chartData.length < 2) return "";
+      const points = chartData.map((d, i) => {
+        const x = (i / (chartData.length - 1)) * 100;
+        const y = 100 - (d[dataKey] / maxVal) * 80;
+        return `${x},${y}`;
+      });
+      return `M ${points.join(" L ")}`;
+    };
 
     const overviewStatCards = [
       {
@@ -82,7 +102,7 @@ export default function AdminDashboardSection({ activeSection }) {
     return (
       <div className="flex-1 overflow-y-auto px-6 py-6 lg:py-10 custom-scrollbar pb-28">
         <div className="max-w-[1400px] mx-auto space-y-lg">
-          {/* 4 High Impact Stat Cards */}
+          {/* STAT CARDS */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-lg">
             {overviewStatCards.map((card, index) => (
               <motion.div
@@ -94,10 +114,10 @@ export default function AdminDashboardSection({ activeSection }) {
               >
                 <div className="flex justify-between items-start">
                   <div>
-                    <p className="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">
+                    <p className="font-label-caps text-[10px] text-on-surface-variant uppercase tracking-widest font-black opacity-50">
                       {card.label}
                     </p>
-                    <h2 className="font-h1 text-h1 text-primary mt-xs tracking-tight">
+                    <h2 className="text-3xl font-black text-primary mt-1 tracking-tighter italic">
                       {card.value}
                     </h2>
                   </div>
@@ -105,29 +125,10 @@ export default function AdminDashboardSection({ activeSection }) {
                     {card.icon}
                   </span>
                 </div>
-                <div className="mt-lg h-12 flex items-end gap-1">
-                  {card.bars.map((height, i) => (
-                    <motion.div
-                      key={i}
-                      initial={{ height: 0 }}
-                      animate={{ height: `${(height / 12) * 100}%` }}
-                      transition={{ delay: 0.5 + i * 0.1, duration: 0.5 }}
-                      className={`flex-1 rounded-t-sm ${
-                        i === card.bars.length - 1
-                          ? "bg-secondary"
-                          : i === card.bars.length - 2
-                            ? "bg-secondary/60"
-                            : "bg-secondary/20"
-                      }`}
-                    />
-                  ))}
-                </div>
                 <p
-                  className={`font-bold text-xs mt-sm flex items-center gap-1 ${
-                    card.trend === "down" ? "text-error" : "text-secondary"
-                  }`}
+                  className={`font-black text-[9px] mt-4 flex items-center gap-1 uppercase tracking-wider ${card.trend === "down" ? "text-error" : "text-secondary"}`}
                 >
-                  <span className="material-symbols-outlined text-sm">
+                  <span className="material-symbols-outlined text-xs">
                     {card.trendText}
                   </span>{" "}
                   {card.delta}
@@ -136,9 +137,8 @@ export default function AdminDashboardSection({ activeSection }) {
             ))}
           </div>
 
-          {/* Secondary Bento Section (70/30) */}
-          <div className="grid grid-cols-1 lg:grid-cols-10 gap-lg h-auto lg:h-[500px]">
-            {/* Growth Velocity Chart Area */}
+          <div className="grid grid-cols-1 lg:grid-cols-10 gap-lg h-auto lg:min-h-[500px]">
+            {/* NEW AREA TREND CHART */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -212,75 +212,68 @@ export default function AdminDashboardSection({ activeSection }) {
                     ))
                   )}
                 </div>
-                
+
                 {/* Legend */}
                 <div className="flex gap-6 mt-6 px-2">
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 bg-primary/20 rounded-sm" />
-                    <span className="text-[10px] font-black text-on-surface-variant/60 uppercase tracking-widest">Revenue</span>
+                    <span className="text-[10px] font-black text-on-surface-variant/60 uppercase tracking-widest">
+                      Revenue
+                    </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 bg-secondary rounded-sm" />
-                    <span className="text-[10px] font-black text-on-surface-variant/60 uppercase tracking-widest">Acquisition</span>
+                    <span className="text-[10px] font-black text-on-surface-variant/60 uppercase tracking-widest">
+                      Acquisition
+                    </span>
                   </div>
                 </div>
               </div>
             </motion.div>
 
-            {/* Live Transmission Scroll Feed */}
+            {/* LIVE FEED */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.5 }}
-              className="lg:col-span-3 glass-panel rounded-[2.5rem] flex flex-col p-xl overflow-hidden border border-white/40 max-h-[500px] bg-white/20"
+              className="lg:col-span-3 glass-panel rounded-[3rem] flex flex-col p-8 overflow-hidden border border-white/40 max-h-[500px] bg-white/20"
             >
-              <div className="flex items-center justify-between mb-lg">
-                <h3 className="font-h3 text-h3 text-primary flex items-center gap-sm uppercase italic tracking-tighter">
-                  <span className="w-2 h-2 rounded-full bg-error animate-pulse" />
-                  Live Activity
-                </h3>
-              </div>
-              <div className="flex-1 overflow-y-auto space-y-md pr-sm custom-scrollbar">
-                {liveFeed.length === 0 ? (
-                  <p className="text-xs text-on-surface-variant italic text-center py-10">
-                    Waiting for system events...
-                  </p>
-                ) : (
+              <h3 className="text-sm font-black text-primary uppercase italic tracking-tighter mb-6 flex items-center gap-2">
+                <Users size={16} /> Activity Feed
+              </h3>
+              <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
+                {liveFeed.length > 0 ? (
                   liveFeed.map((item, idx) => (
-                    <motion.div
+                    <div
                       key={idx}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.6 + idx * 0.1 }}
-                      className="flex gap-md p-md rounded-2xl bg-white/40 border border-white/60 hover:bg-white/60 transition-colors"
+                      className="p-4 bg-white/50 rounded-2xl border border-white/60 space-y-1 relative overflow-hidden shadow-sm"
                     >
-                      <div
-                        className={`w-10 h-10 rounded-full ${item.type === "Subscription" ? "bg-secondary-container" : "bg-primary-container"} flex items-center justify-center shrink-0`}
-                      >
-                        <span
-                          className={`material-symbols-outlined ${item.type === "Subscription" ? "text-secondary" : "text-primary"}`}
-                        >
-                          {item.type === "Subscription"
-                            ? "verified"
-                            : "person_add"}
-                        </span>
-                      </div>
-                      <div className="overflow-hidden">
-                        <p className="font-body-md text-body-md font-bold text-primary truncate">
-                          {item.type.toUpperCase()}
-                        </p>
-                        <p className="text-[10px] text-on-surface-variant leading-tight line-clamp-2">
-                          {item.message}
-                        </p>
-                        <p className="text-[9px] text-outline mt-xs uppercase font-black opacity-40">
-                          {new Date(item.timestamp).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </p>
-                      </div>
-                    </motion.div>
+                      <div className={`absolute left-0 top-0 bottom-0 w-1 ${
+                        item.status === 'good' ? 'bg-secondary' : 
+                        item.status === 'warn' ? 'bg-amber-500' : 
+                        item.status === 'error' ? 'bg-error' : 
+                        'bg-primary/10'
+                      }`} />
+                      <p className={`text-[9px] font-black uppercase tracking-widest ${
+                        item.status === 'good' ? 'text-secondary' : 
+                        item.status === 'warn' ? 'text-amber-600' : 
+                        item.status === 'error' ? 'text-error' : 
+                        'text-secondary'
+                      }`}>
+                        {item.type}
+                      </p>
+                      <p className="text-xs font-bold text-primary leading-tight">
+                        {item.message}
+                      </p>
+                      <p className="text-[8px] text-primary/40 font-black uppercase">
+                        {new Date(item.timestamp).toLocaleTimeString()}
+                      </p>
+                    </div>
                   ))
+                ) : (
+                  <p className="text-xs text-on-surface-variant italic text-center py-10 opacity-50">
+                    Pulse quiet...
+                  </p>
                 )}
               </div>
             </motion.div>
@@ -290,7 +283,7 @@ export default function AdminDashboardSection({ activeSection }) {
     );
   }
 
-  // Other sections...
+  // Section logic remains same...
   if (activeSection === "Plans" && userRole === "admin")
     return <PlansSection />;
   if (activeSection === "Schedule") return <ScheduleSection />;
@@ -314,8 +307,7 @@ export default function AdminDashboardSection({ activeSection }) {
             {activeSection}
           </h2>
           <p className="mt-3 text-on-surface-variant font-medium max-w-2xl">
-            This section is wired into the admin shell and is ready for future
-            content.
+            Module initialized. Awaiting further data injection.
           </p>
         </motion.div>
       </div>

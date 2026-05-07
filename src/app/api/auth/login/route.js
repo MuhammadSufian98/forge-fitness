@@ -23,7 +23,6 @@ export async function POST(req) {
       });
     }
 
-    await dbConnect();
     const body = await req.json();
 
     // Validate input
@@ -31,12 +30,14 @@ export async function POST(req) {
     if (!validation.success) {
       return ApiResponse({
         success: false,
-        message: validation.error.errors[0].message,
+        message: validation.error.issues[0].message,
         status: 400,
       });
     }
 
     const { email, password } = validation.data;
+
+    await dbConnect();
 
     // Find user and include password for comparison
     const user = await User.findOne({ email }).select('+password');
