@@ -12,12 +12,17 @@ const useTrialStore = create((set, get) => ({
   setIsMailOpen: (isMailOpen) => set({ isMailOpen }),
   setSelectedLead: (selectedLead) => set({ selectedLead }),
 
-  fetchLeads: async () => {
+  lastFetched: 0,
+  fetchLeads: async (force = false) => {
+    if (!force && get().leads.length > 0 && Date.now() - get().lastFetched < 120000) {
+      return;
+    }
+
     set({ isLoading: true, error: null });
     try {
       const data = await trialApi.getAll();
       if (data.success) {
-        set({ leads: data.data, isLoading: false });
+        set({ leads: data.data, isLoading: false, lastFetched: Date.now() });
       } else {
         set({ error: data.message, isLoading: false });
       }

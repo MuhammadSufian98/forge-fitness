@@ -3,6 +3,7 @@ import { getAuthUser } from '@/lib/auth';
 import connectDB from '@/lib/mongodb';
 import Subscription from '@/models/Subscription';
 import User from '@/models/User';
+import { logError, withApiLogging } from '@/lib/logger';
 import { z } from 'zod';
 
 const subscriptionApplySchema = z.object({
@@ -11,7 +12,7 @@ const subscriptionApplySchema = z.object({
   billingCycle: z.enum(['Monthly', 'Annual']),
 });
 
-export async function POST(req) {
+async function handlePOST(req) {
   try {
     await connectDB();
     const authUser = await getAuthUser();
@@ -26,7 +27,7 @@ export async function POST(req) {
     if (!validation.success) {
       return ApiResponse({ 
         success: false, 
-        message: 'Validation failed: ' + validation.error.errors[0].message,
+        message: 'Validation failed: ' + validation.error.issues[0].message,
         status: 400 
       });
     }
@@ -82,7 +83,9 @@ export async function POST(req) {
     });
 
   } catch (error) {
-    console.error('Subscription Apply Error:', error);
+    logError('subscriptions.apply.failure', error);
     return ApiResponse({ success: false, message: 'Internal Server Error', status: 500 });
   }
 }
+
+export const POST = withApiLogging(handlePOST, '/api/subscriptions/apply');

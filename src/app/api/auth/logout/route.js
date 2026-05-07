@@ -1,7 +1,8 @@
 import { removeAuthCookie } from '@/lib/auth';
 import { ApiResponse } from '@/lib/response';
+import { logError, withApiLogging } from '@/lib/logger';
 
-export async function POST() {
+async function handlePOST() {
   try {
     await removeAuthCookie();
     return ApiResponse({
@@ -9,7 +10,7 @@ export async function POST() {
       message: 'Logged out successfully',
     });
   } catch (error) {
-    console.error('Logout error:', error);
+    logError('auth.logout.failure', error);
     return ApiResponse({
       success: false,
       message: 'Internal server error',
@@ -17,3 +18,5 @@ export async function POST() {
     });
   }
 }
+
+export const POST = withApiLogging(handlePOST, '/api/auth/logout');

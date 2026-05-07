@@ -2,8 +2,9 @@ import { ApiResponse } from '@/lib/response';
 import { getAuthUser } from '@/lib/auth';
 import connectDB from '@/lib/mongodb';
 import Trial from '@/models/Trial';
+import { logError, withApiLogging } from '@/lib/logger';
 
-export async function GET() {
+async function handleGET() {
   try {
     await connectDB();
     const user = await getAuthUser();
@@ -16,7 +17,9 @@ export async function GET() {
 
     return ApiResponse({ success: true, data: leads });
   } catch (error) {
-    console.error('Trial All GET Error:', error);
+    logError('trial.all.failure', error);
     return ApiResponse({ success: false, message: 'Internal Server Error', status: 500 });
   }
 }
+
+export const GET = withApiLogging(handleGET, '/api/trial/all');

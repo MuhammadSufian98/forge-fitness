@@ -35,12 +35,17 @@ const useTrainersStore = create((set, get) => ({
       newTrainer: { ...state.newTrainer, [name]: value },
     })),
 
-  fetchTrainers: async () => {
+  lastFetched: 0,
+  fetchTrainers: async (force = false) => {
+    if (!force && get().trainers.length > 0 && Date.now() - get().lastFetched < 120000) {
+      return;
+    }
+
     set({ isLoading: true, error: null });
     try {
       const data = await trainersApi.getAll();
       if (data.success) {
-        set({ trainers: data.data, isLoading: false });
+        set({ trainers: data.data, isLoading: false, lastFetched: Date.now() });
       } else {
         set({ error: data.message, isLoading: false });
       }

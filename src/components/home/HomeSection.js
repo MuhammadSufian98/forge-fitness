@@ -19,7 +19,7 @@ import {
   History,
 } from "lucide-react";
 
-export default function HomeSection({ user }) {
+export default function HomeSection({ user, isGuest = false }) {
   const { data: scheduleData } = useSWR(`/api/schedule`, fetcher);
   const allSchedules = scheduleData?.data || [];
 
@@ -114,9 +114,15 @@ export default function HomeSection({ user }) {
               </h1>
 
               <p className="text-white/70 font-medium text-base lg:text-lg block w-full">
-                Ready to crush it? Your schedule and{" "}
-                <span className="text-white font-bold italic">IronCore</span>{" "}
-                progress are ready.
+                {isGuest
+                  ? "Explore recurring sessions, compare plans, and start a trial when you are ready."
+                  : (
+                    <>
+                      Ready to crush it? Your schedule and{" "}
+                      <span className="text-white font-bold italic">IronCore</span>{" "}
+                      progress are ready.
+                    </>
+                  )}
               </p>
             </div>
           </motion.section>
@@ -181,10 +187,10 @@ export default function HomeSection({ user }) {
               ) : (
                 <div className="text-center py-10">
                   <p className="text-xs font-bold text-[#071952]/40 uppercase">
-                    No upcoming protocols
+                    {isGuest ? "Recurring protocols preview" : "No upcoming protocols"}
                   </p>
                   <button className="text-[9px] font-black text-[#088395] uppercase mt-2 underline tracking-widest">
-                    Book Session
+                    {isGuest ? "Open Schedule" : "Book Session"}
                   </button>
                 </div>
               )}
@@ -192,7 +198,7 @@ export default function HomeSection({ user }) {
 
             {nextSession && (
               <button className="w-full mt-6 py-4 bg-[#071952] text-white rounded-2xl font-black text-[9px] uppercase tracking-[0.2em] shadow-lg shadow-[#071952]/20 hover:bg-[#088395] transition-all flex items-center justify-center gap-2">
-                Session Details <ArrowRight size={12} />
+                {isGuest ? "Preview Details" : "Session Details"} <ArrowRight size={12} />
               </button>
             )}
           </motion.div>
@@ -249,18 +255,18 @@ export default function HomeSection({ user }) {
 
             <div className="flex-1 space-y-6">
               <div className="inline-block px-4 py-1.5 rounded-full bg-[#088395]/10 text-[#088395] text-[10px] font-black uppercase tracking-widest">
-                Recommended Protocol
+                {isGuest ? "Preview Protocol" : "Recommended Protocol"}
               </div>
               <h3 className="text-4xl font-black text-[#071952] uppercase italic leading-none tracking-tighter">
                 Titan Strength <br /> Hybrid HIIT
               </h3>
               <p className="text-sm text-[#071952]/60 leading-relaxed font-medium">
-                Our signature metabolic conditioning program designed to
-                maximize raw power and aesthetic definition. Optimized for all
-                levels.
+                {isGuest
+                  ? "Preview Forge Fitness before signing in. Plans and recurring classes are available in read-only mode."
+                  : "Our signature metabolic conditioning program designed to maximize raw power and aesthetic definition. Optimized for all levels."}
               </p>
               <button className="flex items-center gap-3 bg-[#071952] text-white px-10 py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-[#071952]/20 hover:bg-[#088395] transition-all">
-                Enter Protocol <Zap size={14} />
+                {isGuest ? "Browse Plans" : "Enter Protocol"} <Zap size={14} />
               </button>
             </div>
           </motion.div>

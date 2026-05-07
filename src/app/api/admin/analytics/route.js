@@ -3,6 +3,7 @@ import { getAuthUser } from '@/lib/auth';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
 import Subscription from '@/models/Subscription';
+import { logError, withApiLogging } from '@/lib/logger';
 
 const TIER_PRICES = {
   'basic': 29,
@@ -10,7 +11,7 @@ const TIER_PRICES = {
   'elite': 129
 };
 
-export async function GET() {
+async function handleGET() {
   try {
     await connectDB();
     const authUser = await getAuthUser();
@@ -124,7 +125,9 @@ export async function GET() {
     });
 
   } catch (error) {
-    console.error('Admin Analytics Error:', error);
+    logError('admin.analytics.failure', error);
     return ApiResponse({ success: false, message: 'Internal Server Error', status: 500 });
   }
 }
+
+export const GET = withApiLogging(handleGET, '/api/admin/analytics');

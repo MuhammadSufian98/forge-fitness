@@ -16,7 +16,7 @@ export async function middleware(request) {
 
   // 2. Handle Unauthenticated Users
   if (!token) {
-    if (isAdminRoute || isProfileRoute || isDashboardRoute) {
+    if (isAdminRoute || isProfileRoute) {
       return NextResponse.redirect(new URL('/auth/login', request.url));
     }
     return NextResponse.next();

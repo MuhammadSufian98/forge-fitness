@@ -3,8 +3,9 @@ import { getAuthUser } from "@/lib/auth";
 import connectDB from "@/lib/mongodb";
 import User from "@/models/User";
 import bcrypt from "bcryptjs";
+import { logError, withApiLogging } from "@/lib/logger";
 
-export async function PATCH(req) {
+async function handlePATCH(req) {
   try {
     await connectDB();
     const authUser = await getAuthUser();
@@ -25,7 +26,7 @@ export async function PATCH(req) {
     } = body;
 
     // Find the user to update
-    const user = await User.findById(authUser._id);
+    const user = await User.findById(authUser.id);
     if (!user) {
       return ApiResponse({ success: false, message: "User not found", status: 404 });
     }
@@ -69,7 +70,7 @@ export async function PATCH(req) {
     });
 
   } catch (error) {
-    console.error("Profile Update Error:", error);
+    logError("profile.update.failure", error);
     
     // Handle duplicate key errors (e.g., email if allowed to change, but here we don't)
     if (error.code === 11000) {
@@ -79,3 +80,5 @@ export async function PATCH(req) {
     return ApiResponse({ success: false, message: "System synchronization failure", status: 500 });
   }
 }
+
+export const PATCH = withApiLogging(handlePATCH, "/api/profile/edit");

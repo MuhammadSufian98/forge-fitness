@@ -3,9 +3,10 @@
 import { motion } from "framer-motion";
 import useHomeShellStore from "@/stores/home/useHomeShellStore";
 import useAuthStore from "@/stores/auth/useAuthStore";
-import { LogOut } from "lucide-react";
+import Link from "next/link";
+import { LogIn, LogOut } from "lucide-react";
 
-export default function Sidebar() {
+export default function Sidebar({ isGuest = false }) {
   const { user, logout } = useAuthStore();
   const activeSection = useHomeShellStore((state) => state.activeSection);
   const setActiveSection = useHomeShellStore((state) => state.setActiveSection);
@@ -14,9 +15,13 @@ export default function Sidebar() {
     { icon: "home", label: "Home" },
     { icon: "fitness_center", label: "Plans" },
     { icon: "calendar_month", label: "Schedule" },
-    { icon: "groups", label: "Trainers" },
-    { icon: "smart_toy", label: "AI Coach", fill: true },
     { icon: "card_membership", label: "Trial" },
+    ...(!isGuest
+      ? [
+          { icon: "groups", label: "Trainers" },
+          { icon: "smart_toy", label: "AI Coach", fill: true },
+        ]
+      : []),
   ];
 
   return (
@@ -118,16 +123,18 @@ export default function Sidebar() {
       </div>
 
       <div className={`mt-auto pt-6 border-t border-primary/5 flex items-center p-2 ${isShrunk ? "flex-col gap-4" : "justify-between"}`}>
-        <div 
-          onClick={() => setActiveSection("Profile")}
-          className={`flex items-center cursor-pointer hover:bg-primary/5 transition-colors rounded-2xl p-2 flex-1 ${isShrunk ? "justify-center" : "gap-3"}`}
+        <div
+          onClick={() => {
+            if (!isGuest) setActiveSection("Profile");
+          }}
+          className={`flex items-center transition-colors rounded-2xl p-2 flex-1 ${!isGuest ? "cursor-pointer hover:bg-primary/5" : ""} ${isShrunk ? "justify-center" : "gap-3"}`}
         >
           <div className="relative shrink-0">
             <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white text-xs font-black italic shadow-lg overflow-hidden ring-2 ring-primary/10">
               {user?.profileImage ? (
                 <img src={user.profileImage} alt={user.fullName} className="w-full h-full object-cover" />
               ) : (
-                user?.fullName?.split(" ").map(n => n[0]).join("").toUpperCase().substring(0, 2) || "??"
+                user?.fullName?.split(" ").map(n => n[0]).join("").toUpperCase().substring(0, 2) || "G"
               )}
             </div>
             <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-surface rounded-full"></div>
@@ -139,25 +146,35 @@ export default function Sidebar() {
               className="flex flex-col overflow-hidden"
             >
               <span className="font-bold text-[13px] text-primary whitespace-nowrap truncate max-w-[120px]">
-                {user?.fullName || "Athlete"}
+                {user?.fullName || "Guest"}
               </span>
               <span className="text-[11px] text-on-surface-variant/70 font-medium whitespace-nowrap uppercase tracking-tighter">
-                {user?.subscriptionTier || "Basic"} Member
+                {isGuest ? "Preview Access" : `${user?.subscriptionTier || "Basic"} Member`}
               </span>
             </motion.div>
           )}
         </div>
-        
-        <button 
-          onClick={(e) => {
-            e.stopPropagation();
-            logout();
-          }}
-          className={`p-2.5 text-on-surface-variant/40 hover:text-red-500 hover:bg-red-50 transition-all rounded-xl ${isShrunk ? "" : "ml-2"}`}
-          title="Sign Out"
-        >
-          <LogOut size={18} />
-        </button>
+
+        {isGuest ? (
+          <Link
+            href="/auth/login"
+            className={`p-2.5 text-on-surface-variant/40 hover:text-[#088395] hover:bg-[#088395]/10 transition-all rounded-xl ${isShrunk ? "" : "ml-2"}`}
+            title="Sign In"
+          >
+            <LogIn size={18} />
+          </Link>
+        ) : (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              logout();
+            }}
+            className={`p-2.5 text-on-surface-variant/40 hover:text-red-500 hover:bg-red-50 transition-all rounded-xl ${isShrunk ? "" : "ml-2"}`}
+            title="Sign Out"
+          >
+            <LogOut size={18} />
+          </button>
+        )}
       </div>
     </motion.nav>
   );

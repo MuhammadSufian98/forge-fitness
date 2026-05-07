@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Sidebar from "@/components/home/Sidebar";
 import Header from "@/components/layout/Header";
 import DesktopHeader from "@/components/layout/DesktopHeader";
@@ -16,10 +17,20 @@ import useHomeShellStore from "@/stores/home/useHomeShellStore";
 import useAuthStore from "@/stores/auth/useAuthStore";
 import { Loader2 } from "lucide-react";
 
+const guestSections = ["Home", "Plans", "Schedule", "Trial"];
+
 export default function Home() {
   const activeSection = useHomeShellStore((state) => state.activeSection);
+  const setActiveSection = useHomeShellStore((state) => state.setActiveSection);
   const isSidebarShrunk = useHomeShellStore((state) => state.isSidebarShrunk);
   const { isVerifying, user } = useAuthStore();
+  const isGuest = !user;
+
+  useEffect(() => {
+    if (isGuest && !guestSections.includes(activeSection)) {
+      setActiveSection("Home");
+    }
+  }, [activeSection, isGuest, setActiveSection]);
 
   if (isVerifying) {
     return (
@@ -34,39 +45,41 @@ export default function Home() {
     );
   }
 
-  if (!user || user.role !== 'athlete') {
+  if (user && user.role !== 'athlete') {
     return null;
   }
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-surface selection:bg-primary/10">
-      <Sidebar />
+      <Sidebar isGuest={isGuest} />
       <Header />
 
       <main
         className={`flex-1 flex flex-col h-full relative overflow-hidden transition-all duration-500 ease-[0.16,1,0.3,1] ${isSidebarShrunk ? "lg:pl-20" : "lg:pl-64"}`}
       >
-        <DesktopHeader />
+        <DesktopHeader isGuest={isGuest} />
         {activeSection === "Home" ? (
-          <HomeSection user={user} />
+          <HomeSection user={user} isGuest={isGuest} />
         ) : activeSection === "Plans" ? (
-          <PlansSection />
+          <PlansSection isReadOnly={isGuest} />
         ) : activeSection === "Schedule" ? (
-          <ScheduleSection />
-        ) : activeSection === "Trainers" ? (
+          <ScheduleSection isReadOnly={isGuest} />
+        ) : !isGuest && activeSection === "Trainers" ? (
           <TrainersSection />
         ) : activeSection === "Trial" ? (
           <TrialSection />
-        ) : activeSection === "Profile" ? (
+        ) : !isGuest && activeSection === "Profile" ? (
           <ProfileSection />
         ) : activeSection === "Contact" ? (
           <ContactSection />
-        ) : (
+        ) : !isGuest ? (
           <ChatSection />
+        ) : (
+          <HomeSection user={user} isGuest={isGuest} />
         )}
       </main>
 
-      <MobileNav />
+      <MobileNav isGuest={isGuest} />
     </div>
   );
 }

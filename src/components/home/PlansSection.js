@@ -17,13 +17,13 @@ import {
   Clock,
 } from "lucide-react";
 
-export default function PlansSection() {
+export default function PlansSection({ isReadOnly = false }) {
   const selectedPlan = usePlansStore((state) => state.selectedPlan);
   const openPlan = usePlansStore((state) => state.openPlan);
   const closePlan = usePlansStore((state) => state.closePlan);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { data: subData, error: subError, isLoading: subLoading } = useSWR("/api/subscriptions/current", fetcher);
+  const { data: subData } = useSWR(isReadOnly ? null : "/api/subscriptions/current", fetcher);
   const currentSub = subData?.data;
 
   const plans = [
@@ -246,12 +246,14 @@ export default function PlansSection() {
                       {currentSub.status === 'Pending' ? 'Verification Pending' : 'Current Active Plan'}
                     </div>
                   ) : (
-                    <button 
-                      disabled={isSubmitting || currentSub?.status === 'Pending'}
+                    <button
+                      disabled={isReadOnly || isSubmitting || currentSub?.status === 'Pending'}
                       onClick={() => handleConfirmTier(selectedPlan.id)}
                       className="w-full py-5 bg-[#35a29f] hover:bg-white hover:text-[#071952] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-2xl font-black uppercase tracking-widest transition-all shadow-xl shadow-black/20 flex items-center justify-center gap-3"
                     >
-                      {isSubmitting ? (
+                      {isReadOnly ? (
+                        "Read Only Preview"
+                      ) : isSubmitting ? (
                         <Loader2 className="animate-spin" size={20} />
                       ) : (
                         "Confirm Tier"

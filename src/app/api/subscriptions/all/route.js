@@ -2,9 +2,9 @@ import { ApiResponse } from '@/lib/response';
 import { getAuthUser } from '@/lib/auth';
 import connectDB from '@/lib/mongodb';
 import Subscription from '@/models/Subscription';
-import User from '@/models/User';
+import { logError, withApiLogging } from '@/lib/logger';
 
-export async function GET() {
+async function handleGET() {
   try {
     await connectDB();
     const authUser = await getAuthUser();
@@ -36,7 +36,9 @@ export async function GET() {
 
     return ApiResponse({ success: true, data: formattedSubscriptions });
   } catch (error) {
-    console.error('Subscription All GET Error:', error);
+    logError('subscriptions.all.failure', error);
     return ApiResponse({ success: false, message: 'Internal Server Error', status: 500 });
   }
 }
+
+export const GET = withApiLogging(handleGET, '/api/subscriptions/all');

@@ -6,10 +6,33 @@ const useScheduleStore = create((set, get) => ({
   activeDate: new Date().toISOString().split('T')[0],
   isBooking: false,
   error: null,
+  cache: {}, // { [date]: data }
+  lastFetched: {}, // { [date]: timestamp }
 
   openClass: (selectedClass) => set({ selectedClass }),
   closeClass: () => set({ selectedClass: null }),
   setActiveDate: (activeDate) => set({ activeDate }),
+
+  fetchSchedules: async (date, force = false) => {
+    const { cache, lastFetched } = get();
+    const cacheKey = date || 'all';
+
+    if (!force && cache[cacheKey] && lastFetched[cacheKey] && (Date.now() - lastFetched[cacheKey] < 120000)) {
+      return;
+    }
+
+    try {
+      const response = await axios.get(`/api/schedule?date=${date}`);
+      if (response.data.success) {
+        set((state) => ({
+          cache: { ...state.cache, [cacheKey]: response.data.data },
+          lastFetched: { ...state.lastFetched, [cacheKey]: Date.now() }
+        }));
+      }
+    } catch (err) {
+      console.error("Failed to fetch schedules", err);
+    }
+  },
 
   bookClass: async (scheduleId, date) => {
     set({ isBooking: true, error: null });

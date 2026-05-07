@@ -3,6 +3,7 @@ import User from '@/models/User';
 import { comparePassword, signToken, setAuthCookie } from '@/lib/auth';
 import { ApiResponse } from '@/lib/response';
 import { rateLimit } from '@/lib/rate-limit';
+import { logError, withApiLogging } from '@/lib/logger';
 import { z } from 'zod';
 
 const loginSchema = z.object({
@@ -10,7 +11,7 @@ const loginSchema = z.object({
   password: z.string().min(1, 'Password is required'),
 });
 
-export async function POST(req) {
+async function handlePOST(req) {
   try {
     const ip = req.headers.get('x-forwarded-for') || '127.0.0.1';
     const { isLimited } = rateLimit(ip, 5, 60000); // 5 attempts per minute
@@ -76,7 +77,7 @@ export async function POST(req) {
       },
     });
   } catch (error) {
-    console.error('Login error:', error);
+    logError('auth.login.failure', error);
     return ApiResponse({
       success: false,
       message: 'Internal server error',
@@ -84,3 +85,5 @@ export async function POST(req) {
     });
   }
 }
+
+export const POST = withApiLogging(handlePOST, '/api/auth/login');

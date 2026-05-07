@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Sparkles, Headset, Mail } from "lucide-react";
 import useHomeShellStore from "@/stores/home/useHomeShellStore";
 
-export default function DesktopHeader() {
+export default function DesktopHeader({ isGuest = false }) {
   const activeSection = useHomeShellStore((state) => state.activeSection);
   const isSidebarShrunk = useHomeShellStore((state) => state.isSidebarShrunk);
   const toggleSidebar = useHomeShellStore((state) => state.toggleSidebar);
@@ -50,13 +50,13 @@ export default function DesktopHeader() {
           >
             <Headset />
           </button>
-          <motion.button
+          {!isGuest && <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className="flex items-center gap-2 px-6 py-2.5 bg-primary text-white rounded-full font-bold text-[11px] tracking-widest uppercase shadow-lg shadow-primary/20"
           >
             New Workout
-          </motion.button>
+          </motion.button>}
         </div>
       </header>
     );
@@ -103,7 +103,7 @@ export default function DesktopHeader() {
             whileTap={{ scale: 0.95 }}
             className="flex items-center gap-2 px-6 py-2.5 bg-primary text-white rounded-full font-bold text-[11px] tracking-widest uppercase shadow-lg shadow-primary/20"
           >
-            Upgrade Tier
+            {isGuest ? "Read Only" : "Upgrade Tier"}
           </motion.button>
         </div>
       </header>
@@ -134,7 +134,7 @@ export default function DesktopHeader() {
             <div>
               <h1 className="text-lg font-bold text-primary">Class Schedule</h1>
               <p className="text-[12px] text-on-surface-variant/70">
-                Manage your weekly training
+                {isGuest ? "Recurring public sessions" : "Manage your weekly training"}
               </p>
             </div>
           </div>
@@ -151,7 +151,7 @@ export default function DesktopHeader() {
             whileTap={{ scale: 0.95 }}
             className="flex items-center gap-2 px-6 py-2.5 bg-primary text-white rounded-full font-bold text-[11px] tracking-widest uppercase shadow-lg shadow-primary/20"
           >
-            Book Session
+            {isGuest ? "Read Only" : "Book Session"}
           </motion.button>
         </div>
       </header>

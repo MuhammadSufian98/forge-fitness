@@ -2,8 +2,9 @@ import dbConnect from '@/lib/mongodb';
 import User from '@/models/User';
 import { getAuthUser } from '@/lib/auth';
 import { ApiResponse } from '@/lib/response';
+import { logError, withApiLogging } from '@/lib/logger';
 
-export async function GET() {
+async function handleGET() {
   try {
     const authUser = await getAuthUser();
     if (!authUser) {
@@ -30,7 +31,7 @@ export async function GET() {
       data: user,
     });
   } catch (error) {
-    console.error('Auth Me error:', error);
+    logError('auth.me.failure', error);
     return ApiResponse({
       success: false,
       message: 'Internal server error',
@@ -38,3 +39,5 @@ export async function GET() {
     });
   }
 }
+
+export const GET = withApiLogging(handleGET, '/api/auth/me');

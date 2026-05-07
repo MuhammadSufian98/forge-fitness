@@ -3,6 +3,7 @@ import connectDB from '@/lib/mongodb';
 import Trial from '@/models/Trial';
 import { z } from 'zod';
 import { rateLimit } from '@/lib/rate-limit';
+import { logError, withApiLogging } from '@/lib/logger';
 
 const trialSchema = z.object({
   name: z.string().min(1),
@@ -14,7 +15,7 @@ const trialSchema = z.object({
   }).optional(),
 });
 
-export async function POST(req) {
+async function handlePOST(req) {
   try {
     const ip = req.headers.get('x-forwarded-for') || '127.0.0.1';
     const limiter = rateLimit(ip, 1, 3600000); // 1 request per hour
@@ -64,7 +65,9 @@ export async function POST(req) {
 
     return ApiResponse({ success: true, data: newTrial, status: 201 });
   } catch (error) {
-    console.error('Trial Apply Error:', error);
+    logError('trial.apply.failure', error);
     return ApiResponse({ success: false, message: 'Internal Server Error', status: 500 });
   }
 }
+
+export const POST = withApiLogging(handlePOST, '/api/trial/apply');

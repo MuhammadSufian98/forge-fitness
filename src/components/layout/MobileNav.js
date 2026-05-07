@@ -2,16 +2,20 @@
 
 import useHomeShellStore from "@/stores/home/useHomeShellStore";
 
-export default function MobileNav() {
+export default function MobileNav({ isGuest = false }) {
   const activeSection = useHomeShellStore((state) => state.activeSection);
   const setActiveSection = useHomeShellStore((state) => state.setActiveSection);
   const navItems = [
     { icon: "home", label: "Home" },
     { icon: "fitness_center", label: "Plans" },
     { icon: "calendar_month", label: "Schedule" },
-    { icon: "person", label: "Trainers" },
     { icon: "workspace_premium", label: "Trial" },
-    { icon: "mail", label: "Contact" },
+    ...(!isGuest
+      ? [
+          { icon: "person", label: "Trainers" },
+          { icon: "mail", label: "Contact" },
+        ]
+      : []),
   ];
 
   return (

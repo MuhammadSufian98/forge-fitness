@@ -2,17 +2,20 @@ import { ApiResponse } from '@/lib/response';
 import { getAuthUser } from '@/lib/auth';
 import connectDB from '@/lib/mongodb';
 import Trial from '@/models/Trial';
+import { logError, logInfo, withApiLogging } from '@/lib/logger';
 
 // Mock Email Function (In a real app, use Resend or Nodemailer)
 async function sendEmail({ to, subject, message }) {
-  console.log(`Sending email to ${to}...`);
-  console.log(`Subject: ${subject}`);
-  console.log(`Message: ${message}`);
+  logInfo('trial.reply.email.mock_send', {
+    to,
+    subject,
+    messageLength: message?.length,
+  });
   // return await resend.emails.send({ ... });
   return { success: true };
 }
 
-export async function POST(req) {
+async function handlePOST(req) {
   try {
     await connectDB();
     const user = await getAuthUser();
@@ -50,7 +53,9 @@ export async function POST(req) {
 
     return ApiResponse({ success: true, message: 'Reply sent and status updated' });
   } catch (error) {
-    console.error('Trial Reply POST Error:', error);
+    logError('trial.reply.failure', error);
     return ApiResponse({ success: false, message: 'Internal Server Error', status: 500 });
   }
 }
+
+export const POST = withApiLogging(handlePOST, '/api/trial/reply');

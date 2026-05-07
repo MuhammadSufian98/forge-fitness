@@ -17,7 +17,7 @@ import {
   Loader2,
 } from "lucide-react";
 
-export default function ScheduleSection() {
+export default function ScheduleSection({ isReadOnly = false }) {
   const selectedClass = useScheduleStore((state) => state.selectedClass);
   const activeDate = useScheduleStore((state) => state.activeDate);
   const setActiveDate = useScheduleStore((state) => state.setActiveDate);
@@ -27,7 +27,11 @@ export default function ScheduleSection() {
 
   const [activeTab, setActiveTab] = useState("Upcoming"); // Upcoming, Live, History
 
-  const { data: scheduleData, isLoading, error } = useSWR(`/api/schedule?date=${activeDate}`, fetcher);
+  const {
+    data: scheduleData,
+    isLoading,
+    error,
+  } = useSWR(`/api/schedule?date=${activeDate}`, fetcher);
   const classes = scheduleData?.data || [];
 
   const [bookingId, setBookingId] = useState(null);
@@ -41,21 +45,25 @@ export default function ScheduleSection() {
   }, [activeDate]);
 
   const filteredClasses = useMemo(() => {
-    if (activeTab === "Upcoming") return classes.filter(c => c.currentStatus === "Upcoming");
-    if (activeTab === "Live") return classes.filter(c => c.currentStatus === "Live");
-    if (activeTab === "History") return classes.filter(c => c.currentStatus === "Expired");
+    if (activeTab === "Upcoming")
+      return classes.filter((c) => c.currentStatus === "Upcoming");
+    if (activeTab === "Live")
+      return classes.filter((c) => c.currentStatus === "Live");
+    if (activeTab === "History")
+      return classes.filter((c) => c.currentStatus === "Expired");
     return classes;
   }, [classes, activeTab]);
 
   const handleBook = async (e, scheduleId) => {
     e.stopPropagation();
+    if (isReadOnly) return;
     setBookingId(scheduleId);
     const result = await bookClass(scheduleId, activeDate);
     if (result.success) {
       mutate(`/api/schedule?date=${activeDate}`);
       // If the selected class is the one being booked, update it too
       if (selectedClass?._id === scheduleId) {
-          openClass(result.data);
+        openClass(result.data);
       }
     } else {
       alert(`System Error: ${result.message}`);
@@ -67,12 +75,15 @@ export default function ScheduleSection() {
   const weekDays = useMemo(() => {
     const days = [];
     const today = new Date();
-    for (let i = -1; i < 7; i++) { // Allow 1 day past for history
+    for (let i = -1; i < 7; i++) {
+      // Allow 1 day past for history
       const date = new Date(today);
       date.setDate(today.getDate() + i);
       days.push({
-        full: date.toISOString().split('T')[0],
-        dayName: date.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase(),
+        full: date.toISOString().split("T")[0],
+        dayName: date
+          .toLocaleDateString("en-US", { weekday: "short" })
+          .toUpperCase(),
         dayNum: date.getDate(),
       });
     }
@@ -81,7 +92,11 @@ export default function ScheduleSection() {
 
   const formatTime = (dateStr) => {
     const date = new Date(dateStr);
-    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    return date.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
   };
 
   const getDuration = (start, end) => {
@@ -106,8 +121,8 @@ export default function ScheduleSection() {
                     key={tab}
                     onClick={() => setActiveTab(tab)}
                     className={`px-4 py-2 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all ${
-                      activeTab === tab 
-                        ? "bg-[#071952] text-white shadow-lg" 
+                      activeTab === tab
+                        ? "bg-[#071952] text-white shadow-lg"
                         : "text-[#071952]/40 hover:text-[#071952]"
                     }`}
                   >
@@ -144,12 +159,14 @@ export default function ScheduleSection() {
           <section className="space-y-6">
             <div className="flex items-center justify-between">
               <h3 className="text-[10px] font-black text-[#071952]/40 uppercase tracking-[0.3em]">
-                {activeTab} Sessions
+                {isReadOnly ? "Recurring Preview" : `${activeTab} Sessions`}
               </h3>
               {activeTab === "Live" && filteredClasses.length > 0 && (
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                  <span className="text-[9px] font-black text-red-500 uppercase tracking-widest italic">Live Feed Active</span>
+                  <span className="text-[9px] font-black text-red-500 uppercase tracking-widest italic">
+                    Live Feed Active
+                  </span>
                 </div>
               )}
             </div>
@@ -157,16 +174,22 @@ export default function ScheduleSection() {
             {isLoading ? (
               <div className="flex flex-col items-center justify-center py-20 gap-4">
                 <Loader2 className="animate-spin text-[#088395]" size={40} />
-                <p className="text-[10px] font-black text-[#071952]/40 uppercase tracking-widest">Loading Protocols...</p>
+                <p className="text-[10px] font-black text-[#071952]/40 uppercase tracking-widest">
+                  Loading Protocols...
+                </p>
               </div>
             ) : filteredClasses.length === 0 ? (
               <div className="bg-white/50 border-2 border-dashed border-[#071952]/5 rounded-[2.5rem] py-20 flex flex-col items-center justify-center text-center px-10">
                 <Calendar className="text-[#071952]/10 mb-4" size={48} />
-                <h4 className="text-xl font-black text-[#071952] uppercase italic">No {activeTab} Protocols</h4>
+                <h4 className="text-xl font-black text-[#071952] uppercase italic">
+                  No {activeTab} Protocols
+                </h4>
                 <p className="text-sm font-medium text-[#071952]/40 mt-2 max-w-xs">
-                  {activeTab === "Upcoming" ? "All set! Check back for new sessions." : 
-                   activeTab === "Live" ? "Nothing live right now. Prepare for the next wave." :
-                   "History clear. Ready to forge new records?"}
+                  {activeTab === "Upcoming"
+                    ? "All set! Check back for new sessions."
+                    : activeTab === "Live"
+                      ? "Nothing live right now. Prepare for the next wave."
+                      : "History clear. Ready to forge new records?"}
                 </p>
               </div>
             ) : (
@@ -184,39 +207,62 @@ export default function ScheduleSection() {
                       className={`relative bg-white p-8 rounded-[2.5rem] border border-[#071952]/5 shadow-sm group transition-all ${isExpired ? "opacity-60 grayscale-[0.5]" : "hover:shadow-xl"}`}
                     >
                       {/* Timeline Dot */}
-                      <div className={`absolute -left-[41px] top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-4 border-[#f2f3f6] ${isLive ? "bg-red-500 animate-pulse" : isExpired ? "bg-gray-400" : "bg-[#088395]"}`} />
+                      <div
+                        className={`absolute -left-[41px] top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-4 border-[#f2f3f6] ${isLive ? "bg-red-500 animate-pulse" : isExpired ? "bg-gray-400" : "bg-[#088395]"}`}
+                      />
 
                       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                         <div className="flex gap-6 items-center">
                           <div className="text-center min-w-[80px]">
-                            <span className={`block text-xl font-black leading-none uppercase ${isExpired ? "text-gray-500" : "text-[#071952]"}`}>
-                              {formatTime(cls.startTime).split(' ')[0]}
+                            <span
+                              className={`block text-xl font-black leading-none uppercase ${isExpired ? "text-gray-500" : "text-[#071952]"}`}
+                            >
+                              {formatTime(cls.startTime).split(" ")[0]}
                             </span>
                             <span className="text-[10px] font-bold text-[#071952]/30 uppercase tracking-widest">
-                              {formatTime(cls.startTime).split(' ')[1]}
+                              {formatTime(cls.startTime).split(" ")[1]}
                             </span>
                           </div>
                           <div className="h-10 w-[1px] bg-[#071952]/10 hidden lg:block" />
                           <div>
                             <div className="flex items-center gap-3">
-                              <h4 className={`text-xl font-black uppercase italic transition-colors ${isExpired ? "text-gray-500" : "group-hover:text-[#088395] text-[#071952]"}`}>
+                              <h4
+                                className={`text-xl font-black uppercase italic transition-colors ${isExpired ? "text-gray-500" : "group-hover:text-[#088395] text-[#071952]"}`}
+                              >
                                 {cls.title}
                               </h4>
                               {isLive && (
                                 <span className="bg-red-500 text-white text-[8px] font-black px-2 py-0.5 rounded-full flex items-center gap-1">
-                                  <span className="w-1 h-1 bg-white rounded-full animate-pulse" /> LIVE
+                                  <span className="w-1 h-1 bg-white rounded-full animate-pulse" />{" "}
+                                  LIVE
                                 </span>
                               )}
                             </div>
                             <div className="flex items-center gap-4 mt-1">
                               <div className="flex items-center gap-1.5">
-                                <User size={14} className={isExpired ? "text-gray-400" : "text-[#35a29f]"} />
-                                <span className={`text-xs font-bold ${isExpired ? "text-gray-400" : "text-[#071952]/60"}`}>
-                                  {cls.coachNames?.join(', ') || 'Staff Coach'}
+                                <User
+                                  size={14}
+                                  className={
+                                    isExpired
+                                      ? "text-gray-400"
+                                      : "text-[#35a29f]"
+                                  }
+                                />
+                                <span
+                                  className={`text-xs font-bold ${isExpired ? "text-gray-400" : "text-[#071952]/60"}`}
+                                >
+                                  {cls.coachNames?.join(", ") || "Staff Coach"}
                                 </span>
                               </div>
                               <div className="flex items-center gap-1.5">
-                                <MapPin size={14} className={isExpired ? "text-gray-400" : "text-[#088395]"} />
+                                <MapPin
+                                  size={14}
+                                  className={
+                                    isExpired
+                                      ? "text-gray-400"
+                                      : "text-[#088395]"
+                                  }
+                                />
                                 <span className="text-xs font-bold text-[#071952]/40 uppercase tracking-tighter">
                                   {cls.room}
                                 </span>
@@ -225,11 +271,13 @@ export default function ScheduleSection() {
                             {/* Occupancy Bar */}
                             {!isExpired && (
                               <div className="mt-4 w-48 h-1.5 bg-[#f2f3f6] rounded-full overflow-hidden">
-                                  <motion.div 
-                                      initial={{ width: 0 }}
-                                      animate={{ width: `${(cls.currentOccupancy / cls.capacity) * 100}%` }}
-                                      className={`h-full rounded-full ${isLive ? "bg-red-500" : "bg-[#088395]"}`}
-                                  />
+                                <motion.div
+                                  initial={{ width: 0 }}
+                                  animate={{
+                                    width: `${(cls.currentOccupancy / cls.capacity) * 100}%`,
+                                  }}
+                                  className={`h-full rounded-full ${isLive ? "bg-red-500" : "bg-[#088395]"}`}
+                                />
                               </div>
                             )}
                           </div>
@@ -242,36 +290,47 @@ export default function ScheduleSection() {
                           >
                             <Info size={20} />
                           </button>
-                          <button 
-                            disabled={isBooking || isReserved || cls.currentOccupancy >= cls.capacity || isExpired || isLive}
+                          <button
+                            disabled={
+                              isBooking ||
+                              isReserved ||
+                              isReadOnly ||
+                              cls.currentOccupancy >= cls.capacity ||
+                              isExpired ||
+                              isLive
+                            }
                             onClick={(e) => handleBook(e, cls._id)}
                             className={`flex-1 lg:flex-none px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-2
-                                ${isExpired 
-                                    ? "bg-gray-200 text-gray-500 cursor-default shadow-none" 
+                                ${
+                                  isExpired
+                                    ? "bg-gray-200 text-gray-500 cursor-default shadow-none"
                                     : isLive
-                                    ? "bg-red-50/50 text-red-500 border border-red-200 cursor-default shadow-none"
-                                    : isReserved 
-                                    ? "bg-[#35a29f] text-white shadow-[#35a29f]/20" 
-                                    : "bg-[#071952] text-white hover:bg-[#088395] shadow-[#071952]/20 disabled:opacity-50"}`}
+                                      ? "bg-red-50/50 text-red-500 border border-red-200 cursor-default shadow-none"
+                                      : isReserved
+                                        ? "bg-[#35a29f] text-white shadow-[#35a29f]/20"
+                                        : "bg-[#071952] text-white hover:bg-[#088395] shadow-[#071952]/20 disabled:opacity-50"
+                                }`}
                           >
                             {isBooking ? (
-                                <>
-                                    <Loader2 size={16} className="animate-spin" />
-                                    Booking...
-                                </>
+                              <>
+                                <Loader2 size={16} className="animate-spin" />
+                                Booking...
+                              </>
                             ) : isExpired ? (
-                                "Session Concluded"
+                              "Session Concluded"
                             ) : isLive ? (
-                                "Session In Progress"
+                              "Session In Progress"
                             ) : isReserved ? (
-                                <>
-                                    <CheckCircle2 size={16} />
-                                    Reserved
-                                </>
+                              <>
+                                <CheckCircle2 size={16} />
+                                Reserved
+                              </>
+                            ) : isReadOnly ? (
+                              "Read Only"
                             ) : cls.currentOccupancy >= cls.capacity ? (
-                                "Full Capacity"
+                              "Full Capacity"
                             ) : (
-                                "Book Now"
+                              "Book Now"
                             )}
                           </button>
                         </div>
@@ -318,7 +377,11 @@ export default function ScheduleSection() {
                 </h2>
                 <div className="flex flex-wrap gap-4 opacity-70">
                   <div className="flex items-center gap-2 text-sm font-bold">
-                    <Clock size={16} /> {getDuration(selectedClass.startTime, selectedClass.endTime)}
+                    <Clock size={16} />{" "}
+                    {getDuration(
+                      selectedClass.startTime,
+                      selectedClass.endTime,
+                    )}
                   </div>
                   <div className="flex items-center gap-2 text-sm font-bold">
                     <MapPin size={16} /> {selectedClass.room}
@@ -342,7 +405,7 @@ export default function ScheduleSection() {
                       Instructors
                     </h4>
                     <p className="text-[#071952] font-black uppercase italic">
-                      {selectedClass.coachNames?.join(', ') || 'PeakForm Staff'}
+                      {selectedClass.coachNames?.join(", ") || "PeakForm Staff"}
                     </p>
                     <p className="text-xs font-bold text-[#071952]/40 uppercase mt-1">
                       Lead Performance Coaches
@@ -353,7 +416,8 @@ export default function ScheduleSection() {
                       Availability
                     </h4>
                     <p className="text-[#071952] font-black text-2xl tracking-tighter">
-                      {selectedClass.currentOccupancy} / {selectedClass.capacity}
+                      {selectedClass.currentOccupancy} /{" "}
+                      {selectedClass.capacity}
                     </p>
                     <p className="text-xs font-bold text-[#071952]/40 uppercase mt-1">
                       Spots Claimed
@@ -361,31 +425,41 @@ export default function ScheduleSection() {
                   </div>
                 </div>
 
-                <button 
-                  disabled={bookingId === selectedClass._id || selectedClass.isEnrolled || selectedClass.currentOccupancy >= selectedClass.capacity}
+                <button
+                  disabled={
+                    isReadOnly ||
+                    bookingId === selectedClass._id ||
+                    selectedClass.isEnrolled ||
+                    selectedClass.currentOccupancy >= selectedClass.capacity
+                  }
                   onClick={(e) => handleBook(e, selectedClass._id)}
                   className={`w-full py-5 rounded-2xl font-black uppercase tracking-widest transition-all shadow-xl flex items-center justify-center gap-3
-                    ${selectedClass.isEnrolled 
-                        ? "bg-[#35a29f] text-white shadow-[#35a29f]/20" 
-                        : "bg-[#088395] text-white hover:bg-[#071952] shadow-[#088395]/20 disabled:opacity-50"}`}
+                    ${
+                      selectedClass.isEnrolled
+                        ? "bg-[#35a29f] text-white shadow-[#35a29f]/20"
+                        : "bg-[#088395] text-white hover:bg-[#071952] shadow-[#088395]/20 disabled:opacity-50"
+                    }`}
                 >
-                  {bookingId === selectedClass._id ? (
-                      <>
-                        <Loader2 className="animate-spin" size={20} />
-                        Booking...
-                      </>
+                  {isReadOnly ? (
+                    "Read Only Preview"
+                  ) : bookingId === selectedClass._id ? (
+                    <>
+                      <Loader2 className="animate-spin" size={20} />
+                      Booking...
+                    </>
                   ) : selectedClass.isEnrolled ? (
-                      <>
-                        <CheckCircle2 size={20} />
-                        Confirmed My Spot
-                      </>
-                  ) : selectedClass.currentOccupancy >= selectedClass.capacity ? (
-                      "Max Capacity Reached"
+                    <>
+                      <CheckCircle2 size={20} />
+                      Confirmed My Spot
+                    </>
+                  ) : selectedClass.currentOccupancy >=
+                    selectedClass.capacity ? (
+                    "Max Capacity Reached"
                   ) : (
-                      <>
-                        <CheckCircle2 size={20} />
-                        Confirm My Spot
-                      </>
+                    <>
+                      <CheckCircle2 size={20} />
+                      Confirm My Spot
+                    </>
                   )}
                 </button>
               </div>

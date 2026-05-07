@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { logError, logInfo } from '@/lib/logger';
 
 const MONGODB_URI = process.env.MONGODB_URI;
 const isVercel = Boolean(process.env.VERCEL);
@@ -24,6 +25,11 @@ if (!cached) {
 
 async function dbConnect() {
   if (cached.conn) {
+    logInfo('db.connection.reuse', {
+      readyState: mongoose.connection.readyState,
+      host: mongoose.connection.host,
+      name: mongoose.connection.name,
+    });
     return cached.conn;
   }
 
@@ -34,7 +40,18 @@ async function dbConnect() {
       connectTimeoutMS: 5000,
     };
 
+    logInfo('db.connection.start', {
+      readyState: mongoose.connection.readyState,
+      uriType: MONGODB_URI.startsWith('mongodb+srv://') ? 'atlas-srv' : 'standard',
+      isVercel,
+    });
+
     cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
+      logInfo('db.connection.success', {
+        readyState: mongoose.connection.readyState,
+        host: mongoose.connection.host,
+        name: mongoose.connection.name,
+      });
       return mongoose;
     });
   }
@@ -42,6 +59,10 @@ async function dbConnect() {
   try {
     cached.conn = await cached.promise;
   } catch (e) {
+    logError('db.connection.failure', e, {
+      readyState: mongoose.connection.readyState,
+      isVercel,
+    });
     cached.promise = null;
     throw e;
   }

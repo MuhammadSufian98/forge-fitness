@@ -3,6 +3,7 @@ import User from '@/models/User';
 import { hashPassword } from '@/lib/auth';
 import { ApiResponse } from '@/lib/response';
 import { rateLimit } from '@/lib/rate-limit';
+import { logError, withApiLogging } from '@/lib/logger';
 import { z } from 'zod';
 
 const signupSchema = z.object({
@@ -12,7 +13,7 @@ const signupSchema = z.object({
   role: z.enum(['admin', 'coach', 'athlete']).optional().default('athlete'),
 });
 
-export async function POST(req) {
+async function handlePOST(req) {
   try {
     const ip = req.headers.get('x-forwarded-for') || '127.0.0.1';
     const { isLimited } = rateLimit(ip, 5, 60000); // 5 attempts per minute
@@ -74,7 +75,7 @@ export async function POST(req) {
       status: 201,
     });
   } catch (error) {
-    console.error('Signup error:', error);
+    logError('auth.signup.failure', error);
     return ApiResponse({
       success: false,
       message: 'Internal server error',
@@ -82,3 +83,5 @@ export async function POST(req) {
     });
   }
 }
+
+export const POST = withApiLogging(handlePOST, '/api/auth/signup');

@@ -2,8 +2,9 @@ import { ApiResponse } from '@/lib/response';
 import { getAuthUser, hashPassword } from '@/lib/auth';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
+import { logError, withApiLogging } from '@/lib/logger';
 
-export async function GET() {
+async function handleGET() {
   try {
     await connectDB();
     const authUser = await getAuthUser();
@@ -39,12 +40,12 @@ export async function GET() {
     return ApiResponse({ success: true, data: coaches });
 
   } catch (error) {
-    console.error('Trainers GET Error:', error);
+    logError('trainers.get.failure', error);
     return ApiResponse({ success: false, message: 'Internal Server Error', status: 500 });
   }
 }
 
-export async function POST(req) {
+async function handlePOST(req) {
   try {
     await connectDB();
     const authUser = await getAuthUser();
@@ -84,7 +85,10 @@ export async function POST(req) {
 
     return ApiResponse({ success: true, data: coachData, status: 201 });
   } catch (error) {
-    console.error('Trainers POST Error:', error);
+    logError('trainers.post.failure', error);
     return ApiResponse({ success: false, message: 'Internal Server Error', status: 500 });
   }
 }
+
+export const GET = withApiLogging(handleGET, '/api/trainers');
+export const POST = withApiLogging(handlePOST, '/api/trainers');

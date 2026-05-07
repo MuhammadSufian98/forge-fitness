@@ -3,8 +3,9 @@ import { getAuthUser } from '@/lib/auth';
 import connectDB from '@/lib/mongodb';
 import Subscription from '@/models/Subscription';
 import User from '@/models/User';
+import { logError, withApiLogging } from '@/lib/logger';
 
-export async function PATCH(req) {
+async function handlePATCH(req) {
   try {
     await connectDB();
     const authUser = await getAuthUser();
@@ -80,7 +81,9 @@ export async function PATCH(req) {
     }
 
   } catch (error) {
-    console.error('Subscription Approve Error:', error);
+    logError('subscriptions.approve.failure', error);
     return ApiResponse({ success: false, message: 'Internal Server Error', status: 500 });
   }
 }
+
+export const PATCH = withApiLogging(handlePATCH, '/api/subscriptions/approve');

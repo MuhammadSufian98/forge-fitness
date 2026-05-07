@@ -2,8 +2,9 @@ import { ApiResponse } from '@/lib/response';
 import { getAuthUser } from '@/lib/auth';
 import connectDB from '@/lib/mongodb';
 import Schedule from '@/models/Schedule';
+import { logError, withApiLogging } from '@/lib/logger';
 
-export async function PATCH(req, { params }) {
+async function handlePATCH(req, { params }) {
   try {
     await connectDB();
     const user = await getAuthUser();
@@ -39,12 +40,12 @@ export async function PATCH(req, { params }) {
 
     return ApiResponse({ success: true, data: schedule });
   } catch (error) {
-    console.error('Schedule PATCH Error:', error);
+    logError('schedule.patch.failure', error);
     return ApiResponse({ success: false, message: 'Internal Server Error', status: 500 });
   }
 }
 
-export async function DELETE(req, { params }) {
+async function handleDELETE(req, { params }) {
   try {
     await connectDB();
     const user = await getAuthUser();
@@ -61,7 +62,10 @@ export async function DELETE(req, { params }) {
 
     return ApiResponse({ success: true, message: 'Schedule deleted successfully' });
   } catch (error) {
-    console.error('Schedule DELETE Error:', error);
+    logError('schedule.delete.failure', error);
     return ApiResponse({ success: false, message: 'Internal Server Error', status: 500 });
   }
 }
+
+export const PATCH = withApiLogging(handlePATCH, '/api/schedule/[id]');
+export const DELETE = withApiLogging(handleDELETE, '/api/schedule/[id]');

@@ -4,8 +4,9 @@ import connectDB from '@/lib/mongodb';
 import Schedule from '@/models/Schedule';
 import Booking from '@/models/Booking';
 import mongoose from 'mongoose';
+import { logError, withApiLogging } from '@/lib/logger';
 
-export async function POST(req) {
+async function handlePOST(req) {
   let session;
   try {
     await connectDB();
@@ -84,7 +85,7 @@ export async function POST(req) {
     });
   } catch (error) {
     if (session) await session.abortTransaction();
-    console.error('Schedule Booking Error:', error);
+    logError('schedule.book.failure', error);
     if (error.code === 11000) {
         return ApiResponse({ success: false, message: 'You are already enrolled in this session', status: 400 });
     }
@@ -93,3 +94,5 @@ export async function POST(req) {
     if (session) session.endSession();
   }
 }
+
+export const POST = withApiLogging(handlePOST, '/api/schedule/book');

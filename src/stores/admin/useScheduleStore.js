@@ -4,6 +4,8 @@ import { isRequestCanceled } from "@/utils/axiosInstance";
 
 const useScheduleStore = create((set, get) => ({
   schedules: [],
+  cache: {}, // { [date]: data }
+  lastFetched: {}, // { [date]: timestamp }
   isLoading: false,
   error: null,
   dynamicDays: [],
@@ -17,14 +19,28 @@ const useScheduleStore = create((set, get) => ({
   setActiveDate: (activeDate) => set({ activeDate }),
   setDynamicDays: (dynamicDays) => set({ dynamicDays }),
 
-  fetchSchedules: async (date) => {
+  fetchSchedules: async (date, force = false) => {
+    const { cache, lastFetched } = get();
+    const cacheKey = date || 'all';
+    
+    // Check if we already have fresh data (within 2 minutes)
+    if (!force && cache[cacheKey] && lastFetched[cacheKey] && (Date.now() - lastFetched[cacheKey] < 120000)) {
+      set({ schedules: cache[cacheKey], error: null });
+      return;
+    }
+
     set({ isLoading: true, error: null });
     try {
       const params = { role: 'admin' };
       if (date) params.date = date;
       const data = await scheduleApi.getAll(params);
       if (data.success) {
-        set({ schedules: data.data, isLoading: false });
+        set((state) => ({ 
+          schedules: data.data, 
+          cache: { ...state.cache, [cacheKey]: data.data },
+          lastFetched: { ...state.lastFetched, [cacheKey]: Date.now() },
+          isLoading: false 
+        }));
       } else {
         set({ error: data.message, isLoading: false });
       }

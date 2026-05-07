@@ -2,8 +2,9 @@ import { ApiResponse } from '@/lib/response';
 import { getAuthUser } from '@/lib/auth';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
+import { logError, withApiLogging } from '@/lib/logger';
 
-export async function DELETE(req, { params }) {
+async function handleDELETE(req, { params }) {
   try {
     await connectDB();
     const user = await getAuthUser();
@@ -22,7 +23,9 @@ export async function DELETE(req, { params }) {
 
     return ApiResponse({ success: true, message: 'Trainer offboarded successfully' });
   } catch (error) {
-    console.error('Trainer DELETE Error:', error);
+    logError('trainers.delete.failure', error);
     return ApiResponse({ success: false, message: 'Internal Server Error', status: 500 });
   }
 }
+
+export const DELETE = withApiLogging(handleDELETE, '/api/trainers/[id]');
