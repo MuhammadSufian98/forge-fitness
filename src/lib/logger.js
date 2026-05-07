@@ -1,5 +1,6 @@
 const REDACTED = '[redacted]';
 const SENSITIVE_KEYS = /password|token|secret|authorization|cookie|jwt|uri|connection|string/i;
+const SAFE_KEYS = new Set(['uriType']);
 
 function safeString(value, maxLength = 600) {
   if (value === undefined || value === null) return value;
@@ -22,7 +23,9 @@ function sanitize(value, depth = 0) {
   if (typeof value === 'object') {
     const clean = {};
     for (const [key, item] of Object.entries(value)) {
-      clean[key] = SENSITIVE_KEYS.test(key) ? REDACTED : sanitize(item, depth + 1);
+      clean[key] = !SAFE_KEYS.has(key) && SENSITIVE_KEYS.test(key)
+        ? REDACTED
+        : sanitize(item, depth + 1);
     }
     return clean;
   }

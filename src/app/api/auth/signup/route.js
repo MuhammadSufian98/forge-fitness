@@ -3,6 +3,7 @@ import User from '@/models/User';
 import { hashPassword } from '@/lib/auth';
 import { ApiResponse } from '@/lib/response';
 import { rateLimit } from '@/lib/rate-limit';
+import { databaseUnavailableResponse, isDatabaseConnectionError } from '@/lib/database-error';
 import { logError, withApiLogging } from '@/lib/logger';
 import { z } from 'zod';
 
@@ -76,6 +77,10 @@ async function handlePOST(req) {
     });
   } catch (error) {
     logError('auth.signup.failure', error);
+    if (isDatabaseConnectionError(error)) {
+      return ApiResponse(databaseUnavailableResponse());
+    }
+
     return ApiResponse({
       success: false,
       message: 'Internal server error',
