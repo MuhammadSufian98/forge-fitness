@@ -16,7 +16,7 @@ import {
 import useSWR, { mutate } from "swr";
 import { fetcher } from "@/utils/userAuth";
 import useAuthStore from "@/stores/auth/useAuthStore";
-import axiosInstance from "@/utils/axiosInstance";
+import { leaveApi } from "@/utils/LeaveApi";
 
 export default function ApplicationsSection() {
   const { user } = useAuthStore();
@@ -40,11 +40,13 @@ export default function ApplicationsSection() {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      const res = await axiosInstance.post("/api/admin/applications", formData);
-      if (res.data.success) {
+      const result = await leaveApi.submitLeaveRequest(formData);
+      if (result.success) {
         mutate("/api/admin/applications");
         setIsModalOpen(false);
         setFormData({ startDate: "", endDate: "", reason: "" });
+      } else {
+        alert(result.message);
       }
     } catch (error) {
       console.error("Failed to submit application", error);
@@ -55,11 +57,9 @@ export default function ApplicationsSection() {
 
   const handleStatusUpdate = async (applicationId, status) => {
     try {
-      const res = await axiosInstance.patch("/api/admin/applications", {
-        applicationId,
-        status,
-      });
-      if (res.data.success) mutate("/api/admin/applications");
+      const result = await leaveApi.processApplication(applicationId, status);
+      if (result.success) mutate("/api/admin/applications");
+      else alert(result.message);
     } catch (error) {
       console.error("Failed to update status", error);
     }

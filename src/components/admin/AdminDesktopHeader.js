@@ -5,7 +5,7 @@ import { ShieldCheck, Users, BarChart3, Search, Bell, X, Calendar, User, Target,
 import { useState } from "react";
 import useSWR, { mutate } from "swr";
 import { fetcher } from "@/utils/userAuth";
-import axiosInstance from "@/utils/axiosInstance";
+import { notificationApi } from "@/utils/NotificationApi";
 
 export default function AdminDesktopHeader({ activeSection, isSidebarShrunk, toggleSidebar }) {
   const [isNotifOpen, setIsNotifOpen] = useState(false);
@@ -17,8 +17,8 @@ export default function AdminDesktopHeader({ activeSection, isSidebarShrunk, tog
 
   const handleMarkAsRead = async (id) => {
     try {
-      await axiosInstance.patch("/api/admin/notifications", { notificationId: id });
-      mutate("/api/admin/notifications");
+      const result = await notificationApi.markAsRead(id);
+      if (result.success) mutate("/api/admin/notifications");
     } catch (error) {
       console.error("Failed to mark notification as read", error);
     }
