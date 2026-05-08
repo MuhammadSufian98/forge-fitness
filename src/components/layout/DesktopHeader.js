@@ -738,16 +738,6 @@ export default function DesktopHeader({ isGuest = false }) {
               </p>
             </div>
           </div>
-          <div className="hidden md:flex gap-2">
-            <button className="p-2 rounded-xl hover:bg-primary/5 transition-colors text-on-surface-variant/60 hover:text-primary">
-              <span className="material-symbols-outlined text-xl">history</span>
-            </button>
-            <button className="p-2 rounded-xl hover:bg-primary/5 transition-colors text-on-surface-variant/60 hover:text-primary">
-              <span className="material-symbols-outlined text-xl">
-                settings
-              </span>
-            </button>
-          </div>
         </div>
       </motion.div>
     );
