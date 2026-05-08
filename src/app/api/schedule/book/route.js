@@ -1,8 +1,10 @@
 import { ApiResponse } from '@/lib/response';
 import { getAuthUser } from '@/lib/auth';
 import connectDB from '@/lib/mongodb';
+import User from '@/models/User';
 import Schedule from '@/models/Schedule';
 import Booking from '@/models/Booking';
+import Notification from '@/models/Notification';
 import mongoose from 'mongoose';
 import { logError, withApiLogging } from '@/lib/logger';
 
@@ -10,10 +12,15 @@ async function handlePOST(req) {
   let session;
   try {
     await connectDB();
-    const user = await getAuthUser();
+    const authUser = await getAuthUser();
 
-    if (!user) {
+    if (!authUser) {
       return ApiResponse({ success: false, message: 'Unauthorized', status: 401 });
+    }
+
+    const fullUser = await User.findById(authUser.id);
+    if (!fullUser) {
+      return ApiResponse({ success: false, message: 'User not found', status: 404 });
     }
 
     const { scheduleId, date } = await req.json();
@@ -22,7 +29,7 @@ async function handlePOST(req) {
       return ApiResponse({ success: false, message: 'Schedule ID and Date are required', status: 400 });
     }
 
-    const schedule = await Schedule.findById(scheduleId);
+    const schedule = await Schedule.findById(scheduleId).populate('coaches', 'fullName');
 
     if (!schedule) {
       return ApiResponse({ success: false, message: 'Protocol session not found', status: 404 });
@@ -51,7 +58,7 @@ async function handlePOST(req) {
     await Schedule.findByIdAndUpdate(scheduleId, { $set: { lastBookingAt: new Date() } }).session(session);
 
     // 1. Check if already booked
-    const existingBooking = await Booking.findOne({ userId: user.id, scheduleId, date }).session(session);
+    const existingBooking = await Booking.findOne({ userId: authUser.id, scheduleId, date }).session(session);
     if (existingBooking) {
         await session.abortTransaction();
         return ApiResponse({ success: false, message: 'You are already enrolled in this session', status: 400 });
@@ -66,10 +73,30 @@ async function handlePOST(req) {
 
     // 3. Create Booking
     const newBooking = await Booking.create([{
-        userId: user.id,
+        userId: authUser.id,
         scheduleId,
         date
     }], { session });
+
+    // 4. Create Notifications for Coaches
+    if (schedule.coaches && schedule.coaches.length > 0) {
+      const notificationPromises = schedule.coaches.map(coach => 
+        Notification.create([{
+          recipientId: coach._id,
+          type: 'booking',
+          title: 'New Session Booking',
+          message: `${fullUser.fullName} has booked ${schedule.title} for ${date}`,
+          data: {
+            athleteName: fullUser.fullName,
+            goal: fullUser.fitnessGoals || 'General Fitness',
+            sessionName: schedule.title,
+            timeSlot: `${effectiveStartTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
+            date: date
+          }
+        }], { session })
+      );
+      await Promise.all(notificationPromises);
+    }
 
     await session.commitTransaction();
     
@@ -80,7 +107,7 @@ async function handlePOST(req) {
           ...schedule.toObject(),
           currentOccupancy: currentOccupancy + 1,
           isEnrolled: true,
-          coachNames: [] // Will be populated in the main feed
+          coachNames: schedule.coaches.map(c => c.fullName)
       }
     });
   } catch (error) {

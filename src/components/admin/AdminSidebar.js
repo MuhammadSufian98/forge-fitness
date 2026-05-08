@@ -2,8 +2,11 @@
 
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { LogIn, User, LogOut } from "lucide-react";
+import { LogIn, User, LogOut, AlertCircle } from "lucide-react";
 import useAuthStore from "@/stores/auth/useAuthStore";
+import useSWR from "swr";
+import { fetcher } from "@/utils/userAuth";
+import { useEffect, useState } from "react";
 
 export default function AdminSidebar({
   activeSection,
@@ -13,6 +16,26 @@ export default function AdminSidebar({
   const router = useRouter();
   const { user, isAuthenticated, logout } = useAuthStore();
   const userRole = user?.role;
+  const [showWarning, setShowWarning] = useState(false);
+
+  const { data: reportsData } = useSWR(
+    userRole === "coach" ? "/api/admin/reports" : null,
+    fetcher
+  );
+
+  useEffect(() => {
+    if (userRole === "coach" && reportsData?.success) {
+      const today = new Date().toISOString().split("T")[0];
+      const hasReportToday = reportsData.data.some(r => r.date === today);
+      const currentHour = new Date().getHours();
+      
+      if (currentHour >= 20 && !hasReportToday) {
+        setShowWarning(true);
+      } else {
+        setShowWarning(false);
+      }
+    }
+  }, [reportsData, userRole]);
 
   // Role-based menu items
   const adminMenuItems = [
@@ -21,12 +44,14 @@ export default function AdminSidebar({
     { icon: "calendar_month", label: "Schedule" },
     { icon: "person", label: "Trainers" },
     { icon: "workspace_premium", label: "Trial" },
+    { icon: "description", label: "Applications" },
   ];
 
   const coachMenuItems = [
     { icon: "home", label: "Home" },
     { icon: "calendar_month", label: "Schedule" },
-    { icon: "assessment", label: "Daily Reports" },
+    { icon: "assessment", label: "Daily Reports", warning: true },
+    { icon: "description", label: "Applications" },
   ];
 
   const menuItems = userRole === "coach" ? coachMenuItems : adminMenuItems;
@@ -115,10 +140,18 @@ export default function AdminSidebar({
                 <motion.span
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="font-body-lg text-body-lg whitespace-nowrap"
+                  className="font-body-lg text-body-lg whitespace-nowrap flex-1"
                 >
                   {item.label}
                 </motion.span>
+              )}
+              {item.warning && showWarning && (
+                <motion.div
+                  animate={{ scale: [1, 1.2, 1], opacity: [1, 0.5, 1] }}
+                  transition={{ repeat: Infinity, duration: 1.5 }}
+                >
+                  <AlertCircle size={16} className="text-amber-500" />
+                </motion.div>
               )}
             </motion.a>
           );

@@ -1,12 +1,25 @@
 "use client";
+import useAuthStore from "@/stores/auth/useAuthStore";
 
 export default function AdminMobileNav({ activeSection, setActiveSection }) {
-  const navItems = [
+  const { user } = useAuthStore();
+  const userRole = user?.role;
+
+  const adminNavItems = [
     { icon: "home", label: "Home" },
     { icon: "fitness_center", label: "Plans" },
     { icon: "calendar_month", label: "Schedule" },
-    { icon: "person", label: "Trainers" },
+    { icon: "description", label: "Applications" },
   ];
+
+  const coachNavItems = [
+    { icon: "home", label: "Home" },
+    { icon: "assessment", label: "Daily Reports" },
+    { icon: "calendar_month", label: "Schedule" },
+    { icon: "description", label: "Applications" },
+  ];
+
+  const navItems = userRole === "coach" ? coachNavItems : adminNavItems;
 
   return (
     <nav className="fixed bottom-0 w-full lg:hidden z-50 rounded-t-xl bg-surface/70 dark:bg-primary-container/70 backdrop-blur-2xl border-t border-white/10 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
