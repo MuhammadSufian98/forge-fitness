@@ -16,8 +16,15 @@ import {
   X,
   Loader2,
   Users,
+  AlertCircle,
+  Clock,
+  Check,
 } from "lucide-react";
 import useTrainersStore, { SPECIALIZATION_OPTIONS } from "@/stores/admin/useTrainersStore";
+import useSWR, { mutate } from "swr";
+import { fetcher } from "@/utils/userAuth";
+import { leaveApi } from "@/utils/LeaveApi";
+import { useState } from "react";
 
 export default function TrainersSection() {
   const {
@@ -34,6 +41,25 @@ export default function TrainersSection() {
     updateTrainerStatus,
     offboardTrainer,
   } = useTrainersStore();
+
+  const [selectedLeave, setSelectedLeave] = useState(null);
+
+  const { data: leavesData } = useSWR("/api/admin/applications", fetcher);
+  const leaveApplications = leavesData?.data || [];
+
+  const handleProcessLeave = async (id, status) => {
+    try {
+      const result = await leaveApi.processApplication(id, status);
+      if (result.success) {
+        mutate("/api/admin/applications");
+        setSelectedLeave(null);
+      } else {
+        alert(result.message);
+      }
+    } catch (error) {
+      console.error("Failed to process leave", error);
+    }
+  };
 
   const loadTrainers = useCallback(() => {
     fetchTrainers();
@@ -101,13 +127,29 @@ export default function TrainersSection() {
           </header>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {trainers.map((trainer) => (
+            {trainers.map((trainer) => {
+              const pendingLeave = leaveApplications.find(l => l.coachId?._id === trainer._id && l.status === 'Pending');
+              
+              return (
               <motion.div
                 key={trainer._id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-[2.5rem] border border-[#071952]/5 shadow-sm group hover:shadow-2xl transition-all p-8 flex flex-col items-center text-center"
+                className="bg-white rounded-[2.5rem] border border-[#071952]/5 shadow-sm group hover:shadow-2xl transition-all p-8 flex flex-col items-center text-center relative"
               >
+                {pendingLeave && (
+                  <motion.button
+                    initial={{ scale: 0.8 }}
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ repeat: Infinity, duration: 1.5 }}
+                    onClick={() => setSelectedLeave(pendingLeave)}
+                    className="absolute top-6 right-6 p-2 bg-red-50 text-red-500 rounded-full border border-red-100 shadow-sm hover:bg-red-500 hover:text-white transition-all z-10"
+                    title="Pending Leave Request"
+                  >
+                    <AlertCircle size={18} />
+                  </motion.button>
+                )}
+
                 <div className="relative mb-6">
                   <div className="w-24 h-24 rounded-[1.8rem] bg-[#071952] text-white flex items-center justify-center text-2xl font-black italic shadow-xl overflow-hidden">
                     {trainer.profileImage ? (
@@ -168,12 +210,90 @@ export default function TrainersSection() {
                   View Full Intel
                 </button>
               </motion.div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
 
       <AnimatePresence>
+        {/* LEAVE DECISION MODAL */}
+        {selectedLeave && (
+          <div className="fixed inset-0 z-[10001] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedLeave(null)}
+              className="absolute inset-0 bg-[#071952]/80 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="relative w-full max-w-md bg-white rounded-[3rem] shadow-2xl overflow-hidden p-8 space-y-6"
+            >
+              <div className="flex justify-between items-start">
+                <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center text-red-500">
+                  <Calendar size={24} />
+                </div>
+                <button onClick={() => setSelectedLeave(null)} className="text-[#071952]/20 hover:text-[#071952] transition-colors">
+                  <X size={24} />
+                </button>
+              </div>
+
+              <div>
+                <h2 className="text-2xl font-black text-[#071952] uppercase italic tracking-tighter">Leave Intel</h2>
+                <p className="text-[#071952]/40 text-xs mt-1">Administrative decision for personnel request.</p>
+              </div>
+
+              <div className="space-y-4">
+                <div className="p-5 bg-[#f2f3f6] rounded-[2rem] border border-[#071952]/5">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-xl bg-[#071952] text-white flex items-center justify-center font-black italic">
+                      {selectedLeave.coachId?.fullName?.[0]}
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black text-[#088395] uppercase tracking-widest">Requester</p>
+                      <p className="font-bold text-[#071952]">{selectedLeave.coachId?.fullName}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-[8px] font-black text-[#071952]/30 uppercase tracking-widest">Start</p>
+                      <p className="text-xs font-bold text-[#071952]">{selectedLeave.startDate}</p>
+                    </div>
+                    <div>
+                      <p className="text-[8px] font-black text-[#071952]/30 uppercase tracking-widest">End</p>
+                      <p className="text-xs font-bold text-[#071952]">{selectedLeave.endDate}</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 pt-4 border-t border-[#071952]/5">
+                    <p className="text-[8px] font-black text-[#071952]/30 uppercase tracking-widest">Reasoning</p>
+                    <p className="text-xs font-medium text-[#071952]/60 mt-1 italic">"{selectedLeave.reason}"</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <button
+                  onClick={() => handleProcessLeave(selectedLeave._id, 'Rejected')}
+                  className="flex-1 py-4 bg-red-50 text-red-500 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all border border-red-100 flex items-center justify-center gap-2"
+                >
+                  <XCircle size={16} /> Deny
+                </button>
+                <button
+                  onClick={() => handleProcessLeave(selectedLeave._id, 'Approved')}
+                  className="flex-1 py-4 bg-[#088395] text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-[#071952] transition-all shadow-xl flex items-center justify-center gap-2"
+                >
+                  <Check size={16} /> Approve
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
         {/* ADD COACH DRAWER */}
         {isAddOpen && (
           <>

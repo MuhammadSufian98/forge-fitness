@@ -7,7 +7,7 @@ import useSWR, { mutate } from "swr";
 import { fetcher } from "@/utils/userAuth";
 import { notificationApi } from "@/utils/NotificationApi";
 
-export default function AdminDesktopHeader({ activeSection, isSidebarShrunk, toggleSidebar }) {
+export default function AdminDesktopHeader({ activeSection, setActiveSection, isSidebarShrunk, toggleSidebar }) {
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [selectedNotif, setSelectedNotif] = useState(null);
 
@@ -25,7 +25,22 @@ export default function AdminDesktopHeader({ activeSection, isSidebarShrunk, tog
   };
 
   const handleNotifClick = (notif) => {
-    setSelectedNotif(notif);
+    if (notif.data?.section && setActiveSection) {
+      setActiveSection(notif.data.section);
+      // We can use window events or global state to trigger the specific filter/scroll
+      if (notif.data.requestId) {
+        window.dispatchEvent(new CustomEvent('admin:deep-link', { 
+          detail: { 
+            section: notif.data.section, 
+            requestId: notif.data.requestId 
+          } 
+        }));
+      }
+      setIsNotifOpen(false);
+    } else {
+      setSelectedNotif(notif);
+    }
+    
     if (!notif.isRead) handleMarkAsRead(notif._id);
   };
 

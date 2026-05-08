@@ -3,6 +3,7 @@ import { getAuthUser } from '@/lib/auth';
 import connectDB from '@/lib/mongodb';
 import Subscription from '@/models/Subscription';
 import User from '@/models/User';
+import Notification from '@/models/Notification';
 import { logError, withApiLogging } from '@/lib/logger';
 import { z } from 'zod';
 
@@ -46,6 +47,7 @@ async function handlePOST(req) {
     });
     
     if (pendingRequest) {
+      logError('subscriptions.apply.pending_exists', new Error('Pending request already exists'), { userId: user._id });
       return ApiResponse({ 
         success: false, 
         message: 'A protocol upgrade is already awaiting deployment.', 
@@ -59,6 +61,11 @@ async function handlePOST(req) {
     const requestedTierValue = tierHierarchy[planId];
 
     if (currentTierValue > requestedTierValue) {
+      logError('subscriptions.apply.downgrade_blocked', new Error('Manual downgrade required'), { 
+        userId: user._id, 
+        currentTier: user.subscriptionTier, 
+        requestedTier: planId 
+      });
       return ApiResponse({ 
         success: false, 
         message: 'You already have an active higher-tier plan. Downgrades require manual verification.', 
@@ -74,6 +81,36 @@ async function handlePOST(req) {
       paymentMethod,
       billingCycle
     });
+
+    // 4. TRIGGER NOTIFICATION: Athlete Journey
+    await Notification.create({
+      recipientId: user._id,
+      type: 'system',
+      title: 'Application Received',
+      message: `Application Received: Your ${planId.charAt(0).toUpperCase() + planId.slice(1)} request is under review.`,
+      data: {
+        subscriptionId: newSubscription._id,
+        tier: planId,
+        status: 'Pending'
+      }
+    });
+
+    // 5. TRIGGER NOTIFICATION: Admin Global Command Hub
+    const admins = await User.find({ role: 'admin' });
+    if (admins.length > 0) {
+      const adminNotifs = admins.map(admin => ({
+        recipientId: admin._id,
+        type: 'system',
+        title: 'New Subscription Request',
+        message: `Inbound Alert: ${user.fullName} is requesting ${planId.toUpperCase()} access.`,
+        data: {
+          section: 'Plans',
+          requestId: newSubscription._id,
+          type: 'subscription'
+        }
+      }));
+      await Notification.insertMany(adminNotifs);
+    }
 
     return ApiResponse({ 
       success: true, 

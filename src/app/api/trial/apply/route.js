@@ -1,6 +1,8 @@
 import { ApiResponse } from '@/lib/response';
 import connectDB from '@/lib/mongodb';
 import Trial from '@/models/Trial';
+import User from '@/models/User';
+import Notification from '@/models/Notification';
 import { z } from 'zod';
 import { rateLimit } from '@/lib/rate-limit';
 import { logError, withApiLogging } from '@/lib/logger';
@@ -62,6 +64,23 @@ async function handlePOST(req) {
       coordinates: coordinates || { lat: 0, lng: 0 },
       status: 'New'
     });
+
+    // TRIGGER NOTIFICATION: Admin Global Command Hub
+    const admins = await User.find({ role: 'admin' });
+    if (admins.length > 0) {
+      const adminNotifs = admins.map(admin => ({
+        recipientId: admin._id,
+        type: 'system',
+        title: 'New Trial Lead',
+        message: `Inbound Lead: ${name} is requesting access for ${goal}.`,
+        data: {
+          section: 'Trial',
+          requestId: newTrial._id,
+          type: 'trial'
+        }
+      }));
+      await Notification.insertMany(adminNotifs);
+    }
 
     return ApiResponse({ success: true, data: newTrial, status: 201 });
   } catch (error) {

@@ -405,7 +405,8 @@ export default function ScheduleSection({ isReadOnly = false }) {
                       Instructors
                     </h4>
                     <p className="text-[#071952] font-black uppercase italic">
-                      {selectedClass.coachNames?.join(", ") || "PeakForm Staff"}
+                      {selectedClass.coachNames?.join(", ") ||
+                        "FORGE FITNESS Staff"}
                     </p>
                     <p className="text-xs font-bold text-[#071952]/40 uppercase mt-1">
                       Lead Performance Coaches

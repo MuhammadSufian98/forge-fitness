@@ -2,6 +2,8 @@ import { ApiResponse } from '@/lib/response';
 import { getAuthUser } from '@/lib/auth';
 import connectDB from '@/lib/mongodb';
 import LeaveApplication from '@/models/LeaveApplication';
+import Notification from '@/models/Notification';
+import User from '@/models/User';
 import { logError, withApiLogging } from '@/lib/logger';
 
 async function handleGET() {
@@ -48,6 +50,23 @@ async function handlePOST(req) {
       reason,
     });
 
+    // TRIGGER NOTIFICATION: Admin Global Command Hub
+    const admins = await User.find({ role: 'admin' });
+    if (admins.length > 0) {
+      const adminNotifs = admins.map(admin => ({
+        recipientId: admin._id,
+        type: 'system',
+        title: 'Personnel Leave Alert',
+        message: `Leave Request: ${authUser.fullName} submitted a leave application for ${startDate} to ${endDate}.`,
+        data: {
+          section: 'Applications',
+          requestId: newApplication._id,
+          type: 'leave'
+        }
+      }));
+      await Notification.insertMany(adminNotifs);
+    }
+
     return ApiResponse({ success: true, data: newApplication, status: 201 });
   } catch (error) {
     logError('admin.applications.post.failure', error);
@@ -76,6 +95,18 @@ async function handlePATCH(req) {
       { status },
       { new: true }
     );
+
+    // TRIGGER NOTIFICATION: Notify Coach of Decision
+    await Notification.create({
+      recipientId: updatedApplication.coachId,
+      type: 'system',
+      title: `Leave Request ${status}`,
+      message: `Your leave request for ${updatedApplication.startDate} has been ${status.toLowerCase()}.`,
+      data: {
+        applicationId: updatedApplication._id,
+        status: status
+      }
+    });
 
     return ApiResponse({ success: true, data: updatedApplication });
   } catch (error) {

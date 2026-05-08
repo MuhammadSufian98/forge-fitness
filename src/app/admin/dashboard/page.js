@@ -50,6 +50,7 @@ export default function AdminDashboardPage() {
       >
         <AdminDesktopHeader
           activeSection={activeSection}
+          setActiveSection={setActiveSection}
           isSidebarShrunk={isSidebarShrunk}
           toggleSidebar={toggleSidebar}
         />

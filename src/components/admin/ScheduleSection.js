@@ -286,7 +286,8 @@ export default function ScheduleSection() {
                                   isExpired ? "text-gray-400" : "text-[#35a29f]"
                                 }
                               />{" "}
-                              {item.coachNames?.join(" + ") || "PeakForm Staff"}
+                              {item.coachNames?.join(" + ") ||
+                                "FORGE FITNESS Staff"}
                             </p>
                           </div>
                         </div>

@@ -23,7 +23,10 @@ export default function PlansSection({ isReadOnly = false }) {
   const closePlan = usePlansStore((state) => state.closePlan);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { data: subData } = useSWR(isReadOnly ? null : "/api/subscriptions/current", fetcher);
+  const { data: subData } = useSWR(
+    isReadOnly ? null : "/api/subscriptions/current",
+    fetcher,
+  );
   const currentSub = subData?.data;
 
   const plans = [
@@ -84,7 +87,7 @@ export default function PlansSection({ isReadOnly = false }) {
       const response = await subscriptionsApi.apply({
         planId,
         paymentMethod: "Manual/In-Gym", // Default for now
-        billingCycle: "Monthly"
+        billingCycle: "Monthly",
       });
       if (response.success) {
         mutate("/api/subscriptions/current");
@@ -119,18 +122,27 @@ export default function PlansSection({ isReadOnly = false }) {
             </div>
 
             {currentSub && (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 className="bg-white border-2 border-[#088395] rounded-2xl px-6 py-4 flex items-center gap-4 shadow-sm"
               >
                 <div className="bg-[#088395]/10 p-2 rounded-xl text-[#088395]">
-                  {currentSub.status === 'Pending' ? <Clock size={24} /> : <ShieldCheck size={24} />}
+                  {currentSub.status === "Pending" ? (
+                    <Clock size={24} />
+                  ) : (
+                    <ShieldCheck size={24} />
+                  )}
                 </div>
                 <div>
-                  <p className="text-[10px] font-black text-[#088395] uppercase tracking-widest">Current Status</p>
+                  <p className="text-[10px] font-black text-[#088395] uppercase tracking-widest">
+                    Current Status
+                  </p>
                   <h4 className="text-lg font-black text-[#071952] uppercase italic">
-                    {currentSub.tier} <span className="text-sm not-italic font-bold text-[#071952]/40">— {currentSub.status}</span>
+                    {currentSub.tier}{" "}
+                    <span className="text-sm not-italic font-bold text-[#071952]/40">
+                      — {currentSub.status}
+                    </span>
                   </h4>
                 </div>
               </motion.div>
@@ -140,8 +152,11 @@ export default function PlansSection({ isReadOnly = false }) {
           {/* Grid Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {plans.map((plan) => {
-              const isActive = currentSub?.tier === plan.id && currentSub?.status === 'Active';
-              const isPending = currentSub?.tier === plan.id && currentSub?.status === 'Pending';
+              const isActive =
+                currentSub?.tier === plan.id && currentSub?.status === "Active";
+              const isPending =
+                currentSub?.tier === plan.id &&
+                currentSub?.status === "Pending";
 
               return (
                 <motion.div
@@ -149,7 +164,7 @@ export default function PlansSection({ isReadOnly = false }) {
                   layoutId={`card-${plan.id}`}
                   onClick={() => openPlan(plan)}
                   whileHover={{ y: -10, transition: { duration: 0.2 } }}
-                  className={`bg-white rounded-[2.5rem] p-8 border ${isActive ? 'border-[#088395] border-2 shadow-lg shadow-[#088395]/10' : 'border-[#071952]/5'} shadow-sm cursor-pointer relative overflow-hidden group flex flex-col`}
+                  className={`bg-white rounded-[2.5rem] p-8 border ${isActive ? "border-[#088395] border-2 shadow-lg shadow-[#088395]/10" : "border-[#071952]/5"} shadow-sm cursor-pointer relative overflow-hidden group flex flex-col`}
                 >
                   {plan.badge && (
                     <div className="absolute top-6 right-6 bg-[#088395] px-3 py-1 rounded-full text-[9px] font-black text-white tracking-widest uppercase">
@@ -165,7 +180,9 @@ export default function PlansSection({ isReadOnly = false }) {
 
                   <h3 className="text-2xl font-black text-[#071952] uppercase italic flex items-center gap-2">
                     {plan.title}
-                    {isActive && <div className="w-2 h-2 bg-[#088395] rounded-full animate-pulse" />}
+                    {isActive && (
+                      <div className="w-2 h-2 bg-[#088395] rounded-full animate-pulse" />
+                    )}
                   </h3>
                   <p className="text-[10px] font-bold text-[#088395] uppercase tracking-[0.2em] mb-4">
                     {plan.tagline}
@@ -183,7 +200,9 @@ export default function PlansSection({ isReadOnly = false }) {
                         /mo
                       </span>
                     </div>
-                    <div className={`p-3 rounded-xl transition-colors ${isActive ? 'bg-[#088395] text-white' : 'bg-[#071952] text-white group-hover:bg-[#088395]'}`}>
+                    <div
+                      className={`p-3 rounded-xl transition-colors ${isActive ? "bg-[#088395] text-white" : "bg-[#071952] text-white group-hover:bg-[#088395]"}`}
+                    >
                       <ArrowRight size={18} />
                     </div>
                   </div>
@@ -220,7 +239,7 @@ export default function PlansSection({ isReadOnly = false }) {
                       {selectedPlan.icon}
                     </div>
                     <span className="font-black uppercase tracking-widest text-xs">
-                      PeakForm {selectedPlan.title}
+                      FORGE FITNESS {selectedPlan.title}
                     </span>
                   </div>
                   <h2 className="text-5xl lg:text-6xl font-black uppercase italic leading-none mb-4">
@@ -240,31 +259,57 @@ export default function PlansSection({ isReadOnly = false }) {
                       per month
                     </span>
                   </div>
-                  
+
                   {currentSub?.tier === selectedPlan.id ? (
                     <div className="w-full py-5 bg-white/10 border-2 border-white/20 text-white rounded-2xl font-black uppercase tracking-widest text-center">
-                      {currentSub.status === 'Pending' ? 'Verification Pending' : 'Current Active Plan'}
+                      {currentSub.status === "Pending"
+                        ? "Verification Pending"
+                        : "Current Active Plan"}
                     </div>
                   ) : (
-                    <button
-                      disabled={isReadOnly || isSubmitting || currentSub?.status === 'Pending'}
-                      onClick={() => handleConfirmTier(selectedPlan.id)}
-                      className="w-full py-5 bg-[#35a29f] hover:bg-white hover:text-[#071952] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-2xl font-black uppercase tracking-widest transition-all shadow-xl shadow-black/20 flex items-center justify-center gap-3"
-                    >
-                      {isReadOnly ? (
-                        "Read Only Preview"
-                      ) : isSubmitting ? (
-                        <Loader2 className="animate-spin" size={20} />
-                      ) : (
-                        "Confirm Tier"
-                      )}
-                    </button>
+                    (() => {
+                      const tierHierarchy = {
+                        free: 0,
+                        basic: 1,
+                        pro: 2,
+                        elite: 3,
+                      };
+                      const currentTierValue =
+                        tierHierarchy[currentSub?.tier] || 0;
+                      const requestedTierValue = tierHierarchy[selectedPlan.id];
+                      const isDowngrade = currentTierValue > requestedTierValue;
+
+                      return (
+                        <button
+                          disabled={
+                            isReadOnly ||
+                            isSubmitting ||
+                            currentSub?.status === "Pending" ||
+                            isDowngrade
+                          }
+                          onClick={() => handleConfirmTier(selectedPlan.id)}
+                          className="w-full py-5 bg-[#35a29f] hover:bg-white hover:text-[#071952] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-2xl font-black uppercase tracking-widest transition-all shadow-xl shadow-black/20 flex items-center justify-center gap-3"
+                        >
+                          {isReadOnly ? (
+                            "Read Only Preview"
+                          ) : isSubmitting ? (
+                            <Loader2 className="animate-spin" size={20} />
+                          ) : isDowngrade ? (
+                            "Downgrade Restriction"
+                          ) : (
+                            "Confirm Tier"
+                          )}
+                        </button>
+                      );
+                    })()
                   )}
-                  {currentSub?.status === 'Pending' && currentSub?.tier !== selectedPlan.id && (
-                    <p className="text-[10px] text-center mt-3 font-bold text-white/40 uppercase tracking-tighter">
-                      Existing pending request found. Please wait for approval.
-                    </p>
-                  )}
+                  {currentSub?.status === "Pending" &&
+                    currentSub?.tier !== selectedPlan.id && (
+                      <p className="text-[10px] text-center mt-3 font-bold text-white/40 uppercase tracking-tighter">
+                        Existing pending request found. Please wait for
+                        approval.
+                      </p>
+                    )}
                 </div>
               </div>
 

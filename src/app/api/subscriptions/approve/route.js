@@ -3,6 +3,7 @@ import { getAuthUser } from '@/lib/auth';
 import connectDB from '@/lib/mongodb';
 import Subscription from '@/models/Subscription';
 import User from '@/models/User';
+import Notification from '@/models/Notification';
 import { logError, withApiLogging } from '@/lib/logger';
 
 async function handlePATCH(req) {
@@ -68,6 +69,19 @@ async function handlePATCH(req) {
       }
 
       await subscription.save();
+
+      // 4. TRIGGER NOTIFICATION: Athlete Journey
+      await Notification.create({
+        recipientId: subscription.userId,
+        type: 'system',
+        title: 'Subscription Active',
+        message: `Welcome to Elite: Your ${subscription.tier.charAt(0).toUpperCase() + subscription.tier.slice(1)} access is now active!`,
+        data: {
+          subscriptionId: subscription._id,
+          tier: subscription.tier,
+          status: 'Active'
+        }
+      });
 
       return ApiResponse({ success: true, message: 'Subscription approved and deployed successfully' });
 

@@ -70,7 +70,7 @@ export default function LoginPage() {
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#35a29f]/20 border border-[#35a29f]/30 mb-4">
                 <Sparkles size={12} className="text-[#35a29f]" />
                 <span className="text-[#35a29f] text-[8px] font-black uppercase tracking-[0.2em]">
-                  PeakForm Ecosystem
+                  FORGE FITNESS Ecosystem
                 </span>
               </div>
               <h1 className="text-white font-black text-4xl lg:text-5xl uppercase italic leading-[0.9] tracking-tighter mb-4">

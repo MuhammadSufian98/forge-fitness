@@ -34,6 +34,21 @@ export default function TrialLeadsSection() {
     message: ""
   });
 
+  useEffect(() => {
+    const handleDeepLink = (e) => {
+      const { section, requestId } = e.detail;
+      if (section === 'Trial' && leads.length > 0) {
+        const target = leads.find(l => l._id === requestId);
+        if (target) {
+          handleReplyClick(target);
+        }
+      }
+    };
+
+    window.addEventListener('admin:deep-link', handleDeepLink);
+    return () => window.removeEventListener('admin:deep-link', handleDeepLink);
+  }, [leads]);
+
   const loadLeads = useCallback(() => {
     fetchLeads();
   }, [fetchLeads]);

@@ -49,25 +49,44 @@ async function handlePOST(req) {
       });
     }
 
-    // Use a transaction for atomic capacity check and booking
-    session = await mongoose.startSession();
-    session.startTransaction();
+    // Use a transaction for atomic capacity check and booking if supported
+    try {
+      session = await mongoose.startSession();
+      session.startTransaction();
+    } catch (transactionError) {
+      session = null;
+    }
 
-    // Force a write lock on the schedule document to serialize bookings for this session
-    // This ensures that two concurrent transactions don't both see the same count before inserting
-    await Schedule.findByIdAndUpdate(scheduleId, { $set: { lastBookingAt: new Date() } }).session(session);
+    // Helper to conditionally add session to queries
+    const withSession = (query) => session ? query.session(session) : query;
+
+    try {
+      // Force a write lock on the schedule document to serialize bookings for this session
+      // This ensures that two concurrent transactions don't both see the same count before inserting
+      await withSession(Schedule.findByIdAndUpdate(scheduleId, { $set: { lastBookingAt: new Date() } }));
+    } catch (lockError) {
+      // Fallback for standalone MongoDB (code 20 or specific message)
+      if (lockError.code === 20 || lockError.message.includes('replica set member')) {
+        if (session) await session.endSession();
+        session = null;
+        console.warn('MongoDB Transactions not supported. Falling back to non-atomic execution.');
+        await Schedule.findByIdAndUpdate(scheduleId, { $set: { lastBookingAt: new Date() } });
+      } else {
+        throw lockError;
+      }
+    }
 
     // 1. Check if already booked
-    const existingBooking = await Booking.findOne({ userId: authUser.id, scheduleId, date }).session(session);
+    const existingBooking = await withSession(Booking.findOne({ userId: authUser.id, scheduleId, date }));
     if (existingBooking) {
-        await session.abortTransaction();
+        if (session) await session.abortTransaction();
         return ApiResponse({ success: false, message: 'You are already enrolled in this session', status: 400 });
     }
 
     // 2. Capacity Check
-    const currentOccupancy = await Booking.countDocuments({ scheduleId, date }).session(session);
+    const currentOccupancy = await withSession(Booking.countDocuments({ scheduleId, date }));
     if (currentOccupancy >= schedule.capacity) {
-      await session.abortTransaction();
+      if (session) await session.abortTransaction();
       return ApiResponse({ success: false, message: 'Protocol at Maximum Capacity', status: 400 });
     }
 
@@ -76,7 +95,7 @@ async function handlePOST(req) {
         userId: authUser.id,
         scheduleId,
         date
-    }], { session });
+    }], session ? { session } : {});
 
     // 4. Create Notifications for Coaches
     if (schedule.coaches && schedule.coaches.length > 0) {
@@ -93,12 +112,27 @@ async function handlePOST(req) {
             timeSlot: `${effectiveStartTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
             date: date
           }
-        }], { session })
+        }], session ? { session } : {})
       );
       await Promise.all(notificationPromises);
     }
 
-    await session.commitTransaction();
+    // 5. Create Notification for the Athlete (Athlete Journey)
+    await Notification.create([{
+      recipientId: authUser.id,
+      type: 'booking',
+      title: 'Reservation Successful',
+      message: `Your reservation for ${schedule.title} on ${date} is confirmed.`,
+      data: {
+        sessionName: schedule.title,
+        timeSlot: `${effectiveStartTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
+        date: date,
+        room: schedule.room,
+        coachNames: schedule.coaches.map(c => c.fullName)
+      }
+    }], session ? { session } : {});
+
+    if (session) await session.commitTransaction();
     
     return ApiResponse({
       success: true,

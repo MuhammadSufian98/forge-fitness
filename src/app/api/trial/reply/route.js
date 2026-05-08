@@ -2,6 +2,8 @@ import { ApiResponse } from '@/lib/response';
 import { getAuthUser } from '@/lib/auth';
 import connectDB from '@/lib/mongodb';
 import Trial from '@/models/Trial';
+import Notification from '@/models/Notification';
+import User from '@/models/User';
 import { logError, logInfo, withApiLogging } from '@/lib/logger';
 
 // Mock Email Function (In a real app, use Resend or Nodemailer)
@@ -50,6 +52,25 @@ async function handlePOST(req) {
     lead.replyMessage = message;
     lead.repliedAt = new Date();
     await lead.save();
+
+    // TRIGGER NOTIFICATION: Athlete Journey
+    // Find the user associated with this lead email if they exist
+    const athleteUser = await User.findOne({ email: lead.email });
+    if (athleteUser) {
+      const coordStr = lead.coordinates ? `${lead.coordinates.lat}, ${lead.coordinates.lng}` : 'Finalizing Details';
+      await Notification.create({
+        recipientId: athleteUser._id,
+        type: 'system',
+        title: 'Trial Access Granted',
+        message: `Your request has been approved! Protocol Location: ${coordStr}. Check your email for details.`,
+        data: {
+          leadId: lead._id,
+          coordinates: lead.coordinates,
+          subject,
+          message
+        }
+      });
+    }
 
     return ApiResponse({ success: true, message: 'Reply sent and status updated' });
   } catch (error) {

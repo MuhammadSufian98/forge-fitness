@@ -32,6 +32,22 @@ export default function SubscriptionMatrix() {
 
   const [searchQuery, setSearchQuery] = useState("");
 
+  useEffect(() => {
+    const handleDeepLink = (e) => {
+      const { section, requestId } = e.detail;
+      if (section === 'Plans' && athletes.length > 0) {
+        const target = athletes.find(a => a._id === requestId);
+        if (target) {
+          setSelectedAthlete({ ...target });
+          setIsDrawerOpen(true);
+        }
+      }
+    };
+
+    window.addEventListener('admin:deep-link', handleDeepLink);
+    return () => window.removeEventListener('admin:deep-link', handleDeepLink);
+  }, [athletes, setSelectedAthlete, setIsDrawerOpen]);
+
   const loadAthletes = useCallback(() => {
     fetchAthletes();
   }, [fetchAthletes]);

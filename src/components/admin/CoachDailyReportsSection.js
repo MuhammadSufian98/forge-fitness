@@ -93,7 +93,7 @@ export default function CoachDailyReportsSection() {
                   size={18}
                   className="group-hover:rotate-90 transition-transform"
                 />{" "}
-                Submit New Brief
+                Submit Report
               </button>
             </header>
 
@@ -203,9 +203,9 @@ export default function CoachDailyReportsSection() {
               <div className="w-24 h-24 bg-[#f2f3f6] rounded-[2.5rem] flex items-center justify-center mb-8">
                 <ClipboardCheck size={40} className="text-[#071952]/10" />
               </div>
-              <div className="max-w-sm space-y-4">
+              <div className="w-full max-w-7xl space-y-4">
                 <h3 className="text-3xl font-black text-[#071952] uppercase italic tracking-tighter">
-                  No Logs Found
+                  No Report Found
                 </h3>
                 <p className="text-[#071952]/40 text-sm font-bold uppercase tracking-widest">
                   Awaiting your first tactical report for the current month.
@@ -215,7 +215,7 @@ export default function CoachDailyReportsSection() {
                 onClick={() => setIsAddModalOpen(true)}
                 className="mt-10 px-10 py-5 bg-[#071952] text-white rounded-[2rem] font-black text-[11px] uppercase tracking-[0.2em] shadow-2xl hover:bg-[#088395] transition-all"
               >
-                Initialize Briefing
+                Submit Report
               </button>
             </motion.div>
           )}

@@ -104,6 +104,7 @@ export default function ApplicationsSection() {
                   {applications.map((app, index) => (
                     <motion.div
                       key={app._id}
+                      id={`app-${app._id}`}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.1 }}
@@ -226,7 +227,7 @@ export default function ApplicationsSection() {
                     Found
                   </h3>
 
-                  <p className="text-[#071952]/40 text-sm font-bold leading-relaxed uppercase tracking-[0.2em] max-w-sm mx-auto">
+                  <p className="text-[#071952]/40 text-sm font-bold leading-relaxed uppercase tracking-[0.2em] max-w-3xl mx-auto">
                     No administrative requests are currently active in the
                     system terminal. All protocols finalized.
                   </p>
